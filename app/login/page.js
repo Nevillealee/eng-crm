@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import {
@@ -17,11 +17,8 @@ import {
 
 export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [isMounted, setIsMounted] = useState(false);
-  const callbackUrl = isMounted
-    ? searchParams.get("callbackUrl") || "/"
-    : "/";
+  const [callbackUrl, setCallbackUrl] = useState("/");
+  const [signupStatus, setSignupStatus] = useState("");
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -32,17 +29,16 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
-    setIsMounted(true);
+    const params = new URLSearchParams(window.location.search);
+    setCallbackUrl(params.get("callbackUrl") || "/");
+    setSignupStatus(params.get("signup") || "");
   }, []);
 
   useEffect(() => {
-    if (!isMounted) {
-      return;
-    }
-    if (searchParams.get("signup") === "success") {
+    if (signupStatus === "success") {
       setInfo("Account created. Check your email for a verification link before signing in.");
     }
-  }, [isMounted, searchParams]);
+  }, [signupStatus]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;

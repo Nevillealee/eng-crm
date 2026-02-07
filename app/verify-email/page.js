@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Box, Button, Container, Paper, Stack, Typography } from "@mui/material";
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const email = searchParams.get("email");
@@ -76,5 +76,22 @@ export default function VerifyEmailPage() {
         </Paper>
       </Container>
     </Box>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense
+      fallback={
+        <Box
+          sx={{
+            minHeight: "100vh",
+            background: "linear-gradient(135deg, #f5f5f7 0%, #e8eefc 100%)",
+          }}
+        />
+      }
+    >
+      <VerifyEmailContent />
+    </Suspense>
   );
 }
