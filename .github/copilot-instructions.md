@@ -98,6 +98,7 @@ Use strong visual hierarchy and consistent spacing to keep the footer scannable.
 - Build (includes Prisma generate): `yarn build`
 - Lint: `yarn lint` (ESLint with `eslint-config-next`)
 - **Verification rule**: Whenever you make changes, run the app with `yarn dev` and resolve any errors that were introduced.
+- **Test account reuse**: Reuse existing local test user accounts whenever possible; create new test accounts only when a scenario requires it.
 - Prisma commands: `npx prisma generate`, `npx prisma migrate dev`, `npx prisma studio`
 
 ## Environment variables

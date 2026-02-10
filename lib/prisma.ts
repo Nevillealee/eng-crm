@@ -1,6 +1,19 @@
-import "dotenv/config";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
+import { config as loadEnv } from "dotenv";
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '../generated/prisma/client'
+
+const sharedEnvPath = resolve(process.cwd(), ".env");
+const developmentEnvPath = resolve(process.cwd(), "development.env");
+
+if (existsSync(sharedEnvPath)) {
+  loadEnv({ path: sharedEnvPath, override: false });
+}
+
+if (process.env.NODE_ENV !== "production" && existsSync(developmentEnvPath)) {
+  loadEnv({ path: developmentEnvPath, override: true });
+}
 
 function resolveConnectionString() {
   const rawConnectionString =

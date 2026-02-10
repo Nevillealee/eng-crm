@@ -3,6 +3,10 @@ import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import prisma from "./lib/prisma";
+import { extractRequestIp } from "./lib/request-ip";
+
+const REMEMBER_ME_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
+const DEFAULT_SESSION_MAX_AGE_SECONDS = 60 * 60 * 12;
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -17,10 +21,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        rememberMe: { label: "Remember me", type: "checkbox" },
       },
-      authorize: async (credentials) => {
+      authorize: async (credentials, request) => {
         const email = credentials?.email?.toLowerCase();
         const password = credentials?.password;
+        const rememberMe = credentials?.rememberMe === "true";
 
         if (!email || !password) {
           return null;
@@ -34,7 +40,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        const isValid = bcrypt.compare(password, user.password);
+        const isValid = await bcrypt.compare(password, user.password);
 
         if (!isValid) {
           return null;
@@ -44,14 +50,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
+        const lastLoginIp = extractRequestIp(request);
+
         await prisma.user.update({
           where: { id: user.id },
-          data: { lastLogin: new Date() },
+          data: { lastLogin: new Date(), lastLoginIp },
         });
 
         return {
           id: user.id,
           email: user.email,
+          isAdmin: Boolean(user.isAdmin),
+          role: user.isAdmin ? "admin" : "engineer",
+          rememberMe,
           name:
             user.name ||
             `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() ||
@@ -64,12 +75,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        token.isAdmin = Boolean(user.isAdmin);
+        token.rememberMe = Boolean(user.rememberMe);
       }
+      if (typeof token.isAdmin !== "boolean") {
+        token.isAdmin = false;
+      }
+      if (typeof token.rememberMe !== "boolean") {
+        token.rememberMe = false;
+      }
+      const nowInSeconds = Math.floor(Date.now() / 1000);
+      token.exp =
+        nowInSeconds +
+        (token.rememberMe ? REMEMBER_ME_MAX_AGE_SECONDS : DEFAULT_SESSION_MAX_AGE_SECONDS);
+      token.role = token.isAdmin ? "admin" : "engineer";
       return token;
     },
     async session({ session, token }) {
       if (session.user && token?.id) {
         session.user.id = token.id;
+        session.user.isAdmin = Boolean(token.isAdmin);
+        session.user.role = token.role;
+        session.user.rememberMe = Boolean(token.rememberMe);
       }
       return session;
     },

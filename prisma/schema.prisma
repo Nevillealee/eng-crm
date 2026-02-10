@@ -19,6 +19,14 @@ model User {
   lastName      String?
   name          String?
   email         String    @unique
+  isAdmin       Boolean   @default(false) @map("is_admin")
+  city          String?
+  skills        String[]  @default([])
+  availabilityStatus String? @map("availability_status")
+  availabilityNote   String? @map("availability_note")
+  upcomingHolidays   Json?   @map("upcoming_holidays")
+  onboardingCompleted Boolean @default(false) @map("onboarding_completed")
+  onboardingStep      Int     @default(1) @map("onboarding_step")
   emailVerified DateTime?
   image         String?
   avatar        Bytes?
@@ -27,10 +35,51 @@ model User {
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
   lastLogin     DateTime? @map("last_login")
+  lastLoginIp   String?   @map("last_login_ip")
+  monthlySalaryPhp Int?   @map("monthly_salary_php")
+  salaryNotes   String?   @map("salary_notes")
+  projectMemberships ProjectMembership[]
   accounts      Account[]
   sessions      Session[]
+  adminAuditLogs AdminAuditLog[]
 
   @@map("users")
+}
+
+enum ProjectStatus {
+  ongoing
+  completed
+  archived
+}
+
+model Project {
+  id          String              @id @default(cuid())
+  name        String
+  clientName  String              @map("client_name")
+  costPhp     Int                 @default(0) @map("cost_php")
+  currencyCode String             @default("PHP") @map("currency_code")
+  status      ProjectStatus       @default(ongoing)
+  startDate   DateTime            @map("start_date")
+  endDate     DateTime?           @map("end_date")
+  adminNotes  String?             @map("admin_notes")
+  createdAt   DateTime            @default(now()) @map("created_at")
+  updatedAt   DateTime            @updatedAt @map("updated_at")
+  memberships ProjectMembership[]
+
+  @@map("projects")
+}
+
+model ProjectMembership {
+  projectId     String   @map("project_id")
+  userId        String   @map("user_id")
+  roleOnProject String?  @map("role_on_project")
+  assignedAt    DateTime @default(now()) @map("assigned_at")
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, userId])
+  @@index([userId])
+  @@map("project_memberships")
 }
 
 model Account {
@@ -67,4 +116,21 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model AdminAuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String?  @map("actor_user_id")
+  actorEmail  String?  @map("actor_email")
+  action      String
+  targetType  String   @map("target_type")
+  targetId    String?  @map("target_id")
+  summary     String
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+  actor       User?    @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([targetType, targetId])
+  @@map("admin_audit_logs")
 }

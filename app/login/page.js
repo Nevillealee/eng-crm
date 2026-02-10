@@ -8,7 +8,9 @@ import {
   Alert,
   Box,
   Button,
+  Checkbox,
   Container,
+  FormControlLabel,
   Paper,
   Stack,
   TextField,
@@ -26,6 +28,7 @@ export default function LoginPage() {
   const [formState, setFormState] = useState({
     email: "",
     password: "",
+    rememberMe: false,
   });
 
   useEffect(() => {
@@ -41,8 +44,8 @@ export default function LoginPage() {
   }, [signupStatus]);
 
   const handleChange = (event) => {
-    const { name, value } = event.target;
-    setFormState((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = event.target;
+    setFormState((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
   };
 
   const handleSubmit = async (event) => {
@@ -56,6 +59,7 @@ export default function LoginPage() {
         redirect: false,
         email: formState.email,
         password: formState.password,
+        rememberMe: formState.rememberMe ? "true" : "false",
         callbackUrl,
       });
 
@@ -150,6 +154,17 @@ export default function LoginPage() {
                   autoComplete="current-password"
                   required
                   fullWidth
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      name="rememberMe"
+                      checked={formState.rememberMe}
+                      onChange={handleChange}
+                      disabled={isSubmitting}
+                    />
+                  }
+                  label="Remember me"
                 />
                 <Button
                   type="submit"

@@ -4,6 +4,19 @@
 
 ENG CRM — a customer-relationship management app with email/password auth built on Next.js 16.1.3 App Router, React 19, JavaScript (no TypeScript in app code), MUI v7, Prisma 7 + PostgreSQL, and NextAuth v5 beta.
 
+## Product requirements
+
+Source of truth for requirements and MVP scope:
+- `docs/PRD.md`
+- `docs/MVP_BACKLOG.md`
+
+When implementing changes, keep behavior aligned with these docs:
+- Admin access is controlled by `users.is_admin` (`isAdmin` in Prisma model).
+- Post-login routing is role-based: admins -> `/admin`, non-admins -> `/engineer`.
+- Salary is monthly PHP and admin-only.
+- Project notes are admin-only.
+- Engineers can edit their own skills/city/avatar/availability/time off.
+
 ## Setup
 
 ```sh
@@ -20,6 +33,7 @@ Required env vars (see `.env` or hosting dashboard): `POSTGRES_URL` (or `POSTGRE
 - `yarn lint` — ESLint with `eslint-config-next`.
 - **Verify changes** — whenever you make changes, run the app with `yarn dev` and resolve any errors that were introduced.
 - No test framework is configured yet.
+- **Test account reuse** — prefer reusing existing local test users before creating new ones. Create new test accounts only when required by the scenario.
 
 ## Code conventions
 

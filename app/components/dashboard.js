@@ -32,10 +32,10 @@ export default function Dashboard({ session }) {
                 ENG CRM
               </Typography>
               <Typography variant="h4">
-                Welcome, {session?.user?.name || session?.user?.email}
+                Engineer account
               </Typography>
               <Typography color="text.secondary">
-                You are signed in and ready to manage customer relationships.
+                Welcome, {session?.user?.name || session?.user?.email}. You are signed in as an engineer.
               </Typography>
             </Stack>
             <Box>

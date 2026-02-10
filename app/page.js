@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { auth } from "../auth";
-import Dashboard from "./components/dashboard";
 
 export default async function Home() {
   const session = await auth();
@@ -9,5 +8,9 @@ export default async function Home() {
     redirect("/login");
   }
 
-  return <Dashboard session={session} />;
+  if (session.user?.role === "admin") {
+    redirect("/admin");
+  }
+
+  redirect("/engineer");
 }
