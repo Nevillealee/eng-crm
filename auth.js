@@ -8,6 +8,17 @@ import { extractRequestIp } from "./lib/request-ip";
 const REMEMBER_ME_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 const DEFAULT_SESSION_MAX_AGE_SECONDS = 60 * 60 * 12;
 
+async function getUserRoleSnapshot(userId) {
+  if (!userId || typeof userId !== "string") {
+    return null;
+  }
+
+  return prisma.user.findUnique({
+    where: { id: userId },
+    select: { isAdmin: true },
+  });
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
@@ -75,20 +86,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.isAdmin = Boolean(user.isAdmin);
         token.rememberMe = Boolean(user.rememberMe);
       }
-      if (typeof token.isAdmin !== "boolean") {
-        token.isAdmin = false;
-      }
+
       if (typeof token.rememberMe !== "boolean") {
         token.rememberMe = false;
       }
-      const nowInSeconds = Math.floor(Date.now() / 1000);
-      token.exp =
-        nowInSeconds +
-        (token.rememberMe ? REMEMBER_ME_MAX_AGE_SECONDS : DEFAULT_SESSION_MAX_AGE_SECONDS);
+
+      const roleSnapshot = await getUserRoleSnapshot(token?.id);
+      if (!roleSnapshot) {
+        delete token.id;
+        token.isAdmin = false;
+        token.role = "engineer";
+        return token;
+      }
+
+      token.isAdmin = Boolean(roleSnapshot?.isAdmin);
       token.role = token.isAdmin ? "admin" : "engineer";
+
+      const nowInSeconds = Math.floor(Date.now() / 1000);
+      if (user || typeof token.exp !== "number") {
+        token.exp =
+          nowInSeconds +
+          (token.rememberMe ? REMEMBER_ME_MAX_AGE_SECONDS : DEFAULT_SESSION_MAX_AGE_SECONDS);
+      }
+
       return token;
     },
     async session({ session, token }) {

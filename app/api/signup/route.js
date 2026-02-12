@@ -1,11 +1,43 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import crypto from "crypto";
 import prisma from "../../../lib/prisma";
+import {
+  buildVerificationUrl,
+  createVerificationTokenRecord,
+} from "../../../lib/email-verification";
 import { sendEmail } from "../../actions/sendEmail";
 
+function isPrismaUniqueConstraintError(error) {
+  return typeof error === "object" && error !== null && error.code === "P2002";
+}
+
+async function issueVerificationEmail(email, name) {
+  const { rawToken, tokenHash, expiresAt } = createVerificationTokenRecord();
+
+  await prisma.verificationToken.deleteMany({
+    where: { identifier: email },
+  });
+
+  await prisma.verificationToken.create({
+    data: {
+      identifier: email,
+      token: tokenHash,
+      expires: expiresAt,
+    },
+  });
+
+  const verificationUrl = buildVerificationUrl(rawToken);
+
+  await sendEmail({
+    type: "verify-email",
+    to: email,
+    name,
+    verificationUrl,
+  });
+}
+
 export async function POST(request) {
-  const body = await request.json();
+  const body = await request.json().catch(() => ({}));
   const {
     firstName,
     lastName,
@@ -16,7 +48,9 @@ export async function POST(request) {
     avatarType,
   } = body || {};
 
-  if (!firstName || !lastName || !email || !password || !confirmPassword) {
+  const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
+
+  if (!firstName || !lastName || !normalizedEmail || !password || !confirmPassword) {
     return NextResponse.json(
       { error: "All fields are required." },
       { status: 400 }
@@ -30,60 +64,56 @@ export async function POST(request) {
     );
   }
 
-  const normalizedEmail = email.toLowerCase();
   const existingUser = await prisma.user.findUnique({
     where: { email: normalizedEmail },
   });
 
   if (existingUser) {
-    return NextResponse.json(
-      { error: "An account with this email already exists." },
-      { status: 409 }
-    );
+    if (!existingUser.emailVerified) {
+      await issueVerificationEmail(
+        normalizedEmail,
+        existingUser.firstName || existingUser.name || normalizedEmail
+      );
+    }
+    // Keep responses generic to avoid account enumeration.
+    return NextResponse.json({ ok: true });
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
   const avatarBuffer = avatar ? Buffer.from(avatar, "base64") : null;
 
-  const user = await prisma.user.create({
-    data: {
-      firstName,
-      lastName,
-      name: `${firstName} ${lastName}`.trim(),
-      email: normalizedEmail,
-      password: passwordHash,
-      avatar: avatarBuffer,
-      avatarMimeType: avatarType || null,
-    },
-  });
+  let user;
+  try {
+    user = await prisma.user.create({
+      data: {
+        firstName,
+        lastName,
+        name: `${firstName} ${lastName}`.trim(),
+        email: normalizedEmail,
+        password: passwordHash,
+        avatar: avatarBuffer,
+        avatarMimeType: avatarType || null,
+      },
+    });
+  } catch (error) {
+    if (isPrismaUniqueConstraintError(error)) {
+      const raceUser = await prisma.user.findUnique({
+        where: { email: normalizedEmail },
+        select: { emailVerified: true, firstName: true, name: true },
+      });
 
-  const verificationToken = crypto.randomUUID();
-  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24);
+      if (raceUser && !raceUser.emailVerified) {
+        await issueVerificationEmail(
+          normalizedEmail,
+          raceUser.firstName || raceUser.name || normalizedEmail
+        );
+      }
+      return NextResponse.json({ ok: true });
+    }
+    throw error;
+  }
 
-  await prisma.verificationToken.deleteMany({
-    where: { identifier: normalizedEmail },
-  });
-
-  await prisma.verificationToken.create({
-    data: {
-      identifier: normalizedEmail,
-      token: verificationToken,
-      expires: expiresAt,
-    },
-  });
-
-  const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL ||
-    process.env.NEXTAUTH_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
-  const verificationUrl = `${baseUrl}/verify-email?token=${encodeURIComponent(verificationToken)}&email=${encodeURIComponent(normalizedEmail)}`;
-
-  await sendEmail({
-    type: "verify-email",
-    to: normalizedEmail,
-    name: user.firstName || user.name,
-    verificationUrl,
-  });
+  await issueVerificationEmail(normalizedEmail, user.firstName || user.name || normalizedEmail);
 
   return NextResponse.json({ ok: true });
 }

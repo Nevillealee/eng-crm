@@ -1,11 +1,39 @@
 import { NextResponse } from "next/server";
-import crypto from "crypto";
 import prisma from "../../../lib/prisma";
+import {
+  buildVerificationUrl,
+  createVerificationTokenRecord,
+} from "../../../lib/email-verification";
 import { sendEmail } from "../../actions/sendEmail";
+
+async function issueVerificationEmail(email, name) {
+  const { rawToken, tokenHash, expiresAt } = createVerificationTokenRecord();
+
+  await prisma.verificationToken.deleteMany({
+    where: { identifier: email },
+  });
+
+  await prisma.verificationToken.create({
+    data: {
+      identifier: email,
+      token: tokenHash,
+      expires: expiresAt,
+    },
+  });
+
+  const verificationUrl = buildVerificationUrl(rawToken);
+
+  await sendEmail({
+    type: "verify-email",
+    to: email,
+    name,
+    verificationUrl,
+  });
+}
 
 export async function POST(request) {
   const body = await request.json().catch(() => ({}));
-  const email = typeof body?.email === "string" ? body.email.toLowerCase() : "";
+  const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
 
   if (!email) {
     return NextResponse.json(
@@ -22,33 +50,7 @@ export async function POST(request) {
     return NextResponse.json({ ok: true });
   }
 
-  const verificationToken = crypto.randomUUID();
-  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24);
-
-  await prisma.verificationToken.deleteMany({
-    where: { identifier: email },
-  });
-
-  await prisma.verificationToken.create({
-    data: {
-      identifier: email,
-      token: verificationToken,
-      expires: expiresAt,
-    },
-  });
-
-  const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL ||
-    process.env.NEXTAUTH_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
-  const verificationUrl = `${baseUrl}/verify-email?token=${encodeURIComponent(verificationToken)}&email=${encodeURIComponent(email)}`;
-
-  await sendEmail({
-    type: "verify-email",
-    to: email,
-    name: user.firstName || user.name,
-    verificationUrl,
-  });
+  await issueVerificationEmail(email, user.firstName || user.name || email);
 
   return NextResponse.json({ ok: true });
 }
