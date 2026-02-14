@@ -4,6 +4,9 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 First, run the development server:
 
+*On the first run you will need to generate the Prisma Client by running `npx prisma generate` after installing the dependencies with `yarn` or `npm install`.
+
+
 ```bash
 npm run dev
 # or
@@ -13,6 +16,7 @@ pnpm dev
 # or
 bun dev
 ```
+
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
