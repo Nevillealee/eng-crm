@@ -199,6 +199,7 @@ export default function AdminDashboard({ session }) {
   const [salarySavingEngineerId, setSalarySavingEngineerId] = useState("");
   const [editingEngineerCompId, setEditingEngineerCompId] = useState("");
   const [expandedHolidayEngineerId, setExpandedHolidayEngineerId] = useState("");
+  const [expandedProjectsEngineerId, setExpandedProjectsEngineerId] = useState("");
   const [projectSortBy, setProjectSortBy] = useState("date");
   const [projectSortDirection, setProjectSortDirection] = useState("desc");
   const [profileForm, setProfileForm] = useState({
@@ -782,7 +783,7 @@ export default function AdminDashboard({ session }) {
             <Stack spacing={2} sx={{ flex: 1 }}>
               <Stack spacing={0.5}>
                 <Typography variant="overline" color="text.secondary">
-                  ENG CRM
+                  Devcombine Engineering Portal
                 </Typography>
                 <Typography variant="h6">Admin</Typography>
               </Stack>
@@ -841,7 +842,7 @@ export default function AdminDashboard({ session }) {
             >
               <Stack spacing={0.5}>
                 <Typography variant="overline" color="text.secondary">
-                  ENG CRM
+                  Devcombine Engineering Portal
                 </Typography>
                 <Typography variant="h6">Admin</Typography>
               </Stack>
@@ -878,7 +879,7 @@ export default function AdminDashboard({ session }) {
               >
                 <Stack spacing={0.5}>
                   <Typography variant="overline" color="text.secondary">
-                    ENG CRM
+                    Devcombine Engineering Portal
                   </Typography>
                   <Typography variant="h6">Admin</Typography>
                 </Stack>
@@ -1099,6 +1100,15 @@ export default function AdminDashboard({ session }) {
                             ? engineer.upcomingHolidays
                             : [];
                           const isHolidayExpanded = expandedHolidayEngineerId === engineer.id;
+                          const now = new Date();
+                          const engineerActiveProjects = projects.filter(
+                            (project) =>
+                              project.status !== "archived" &&
+                              (!project.endDate || new Date(project.endDate) >= now) &&
+                              Array.isArray(project.teamMembers) &&
+                              project.teamMembers.some((m) => m.id === engineer.id)
+                          );
+                          const isProjectsExpanded = expandedProjectsEngineerId === engineer.id;
                           return (
                         <Stack spacing={1.5}>
                           <Stack
@@ -1113,7 +1123,7 @@ export default function AdminDashboard({ session }) {
                               alignItems="center"
                               sx={{ minWidth: 0, flex: 1 }}
                             >
-                              <Avatar src={engineer.image || undefined}>
+                              <Avatar src={engineer.avatarSrc || engineer.image || undefined}>
                                 {(engineer.firstName || engineer.email || "U").slice(0, 1).toUpperCase()}
                               </Avatar>
                               <Stack sx={{ minWidth: 0, flex: 1 }}>
@@ -1191,6 +1201,53 @@ export default function AdminDashboard({ session }) {
                               ) : (
                                 <Typography color="text.secondary" sx={{ pl: 1 }}>
                                   No upcoming holidays
+                                </Typography>
+                              )}
+                            </Collapse>
+                          </Stack>
+                          <Stack spacing={0.5}>
+                            <Button
+                              type="button"
+                              variant="text"
+                              onClick={() =>
+                                setExpandedProjectsEngineerId((prev) =>
+                                  prev === engineer.id ? "" : engineer.id
+                                )
+                              }
+                              sx={{
+                                alignSelf: "flex-start",
+                                px: 0,
+                                minWidth: 0,
+                                textTransform: "none",
+                              }}
+                            >
+                              Current projects: {engineerActiveProjects.length}
+                            </Button>
+                            <Collapse in={isProjectsExpanded} timeout="auto" unmountOnExit>
+                              {engineerActiveProjects.length ? (
+                                <Stack spacing={0.5}>
+                                  {engineerActiveProjects.map((project) => (
+                                    <ButtonBase
+                                      key={`engineer-project-${engineer.id}-${project.id}`}
+                                      onClick={() => beginEdit(project)}
+                                      sx={{
+                                        justifyContent: "flex-start",
+                                        pl: 1,
+                                        borderRadius: 1,
+                                      }}
+                                    >
+                                      <Typography
+                                        color="primary"
+                                        sx={{ textDecoration: "underline", cursor: "pointer" }}
+                                      >
+                                        {project.name}
+                                      </Typography>
+                                    </ButtonBase>
+                                  ))}
+                                </Stack>
+                              ) : (
+                                <Typography color="text.secondary" sx={{ pl: 1 }}>
+                                  No active projects
                                 </Typography>
                               )}
                             </Collapse>

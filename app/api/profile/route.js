@@ -13,6 +13,9 @@ const allowedAvailability = new Set([
   "partially_allocated",
   "unavailable",
 ]);
+const allowedAvatarMimeTypes = new Set(["image/png", "image/jpeg", "image/webp"]);
+const maxAvatarBytes = 2 * 1024 * 1024;
+const base64Pattern = /^[A-Za-z0-9+/]+={0,2}$/;
 const maxOnboardingStep = 3;
 
 function parseSkills(value) {
@@ -65,6 +68,62 @@ function parseHolidays(value) {
   }
 
   return parsed;
+}
+
+function toAvatarDataUrl(avatar, avatarMimeType) {
+  if (!avatar || typeof avatarMimeType !== "string" || !allowedAvatarMimeTypes.has(avatarMimeType)) {
+    return null;
+  }
+  const avatarBuffer =
+    Buffer.isBuffer(avatar) ? avatar : avatar instanceof Uint8Array ? Buffer.from(avatar) : null;
+  if (!avatarBuffer || avatarBuffer.length === 0) {
+    return null;
+  }
+  return `data:${avatarMimeType};base64,${avatarBuffer.toString("base64")}`;
+}
+
+function estimateBase64ByteLength(value) {
+  if (value.length % 4 !== 0) {
+    return null;
+  }
+
+  const paddingLength = value.endsWith("==") ? 2 : value.endsWith("=") ? 1 : 0;
+  return (value.length / 4) * 3 - paddingLength;
+}
+
+function parseAvatarUpdate(avatar, avatarType) {
+  if (avatar === undefined) {
+    return { hasAvatarUpdate: false };
+  }
+
+  if (avatar === null) {
+    return { hasAvatarUpdate: true, avatarBuffer: null, avatarMimeType: null };
+  }
+
+  if (typeof avatar !== "string") {
+    return { error: "Avatar image is invalid." };
+  }
+
+  const normalizedAvatar = avatar.trim();
+  if (!normalizedAvatar || !base64Pattern.test(normalizedAvatar)) {
+    return { error: "Avatar image is invalid." };
+  }
+
+  if (typeof avatarType !== "string" || !allowedAvatarMimeTypes.has(avatarType)) {
+    return { error: "Avatar type is invalid." };
+  }
+
+  const estimatedBytes = estimateBase64ByteLength(normalizedAvatar);
+  if (!estimatedBytes || estimatedBytes > maxAvatarBytes) {
+    return { error: "Avatar must be 2MB or smaller." };
+  }
+
+  const avatarBuffer = Buffer.from(normalizedAvatar, "base64");
+  if (!avatarBuffer.length || avatarBuffer.length > maxAvatarBytes) {
+    return { error: "Avatar must be 2MB or smaller." };
+  }
+
+  return { hasAvatarUpdate: true, avatarBuffer, avatarMimeType: avatarType };
 }
 
 function normalizeSkillsForCompare(value) {
@@ -145,6 +204,9 @@ export async function GET() {
       email: true,
       firstName: true,
       lastName: true,
+      image: true,
+      avatar: true,
+      avatarMimeType: true,
       city: true,
       skills: true,
       availabilityStatus: true,
@@ -160,7 +222,15 @@ export async function GET() {
     return NextResponse.json({ ok: false, error: "User not found." }, { status: 404 });
   }
 
-  return NextResponse.json({ ok: true, profile: user });
+  return NextResponse.json({
+    ok: true,
+    profile: {
+      ...user,
+      image: toAvatarDataUrl(user.avatar, user.avatarMimeType) || user.image || null,
+      avatar: undefined,
+      avatarMimeType: undefined,
+    },
+  });
 }
 
 export async function PATCH(request) {
@@ -180,10 +250,12 @@ export async function PATCH(request) {
       ? body.availabilityNote.trim().slice(0, 500)
       : null;
   const upcomingHolidays = parseHolidays(body?.upcomingHolidays);
-  const onboardingCompleted = body?.onboardingCompleted === true;
+  const hasOnboardingCompletedUpdate = typeof body?.onboardingCompleted === "boolean";
+  const onboardingCompleted = hasOnboardingCompletedUpdate ? body.onboardingCompleted : undefined;
   const requestedOnboardingStep = Number.isInteger(body?.onboardingStep)
     ? body.onboardingStep
     : null;
+  const avatarUpdate = parseAvatarUpdate(body?.avatar, body?.avatarType);
 
   if (skills === null) {
     return NextResponse.json(
@@ -226,12 +298,17 @@ export async function PATCH(request) {
     );
   }
 
+  if (avatarUpdate.error) {
+    return NextResponse.json({ ok: false, error: avatarUpdate.error }, { status: 400 });
+  }
+
   const previous = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
       id: true,
       email: true,
       isAdmin: true,
+      city: true,
       skills: true,
       availabilityStatus: true,
       availabilityNote: true,
@@ -253,14 +330,19 @@ export async function PATCH(request) {
       availabilityStatus,
       availabilityNote: availabilityNote || null,
       upcomingHolidays,
-      onboardingCompleted,
+      onboardingCompleted: hasOnboardingCompletedUpdate ? onboardingCompleted : undefined,
       onboardingStep: requestedOnboardingStep || undefined,
+      avatar: avatarUpdate.hasAvatarUpdate ? avatarUpdate.avatarBuffer : undefined,
+      avatarMimeType: avatarUpdate.hasAvatarUpdate ? avatarUpdate.avatarMimeType : undefined,
     },
     select: {
       id: true,
       email: true,
       firstName: true,
       lastName: true,
+      image: true,
+      avatar: true,
+      avatarMimeType: true,
       city: true,
       skills: true,
       availabilityStatus: true,
@@ -337,5 +419,13 @@ export async function PATCH(request) {
     }
   }
 
-  return NextResponse.json({ ok: true, profile: updated });
+  return NextResponse.json({
+    ok: true,
+    profile: {
+      ...updated,
+      image: toAvatarDataUrl(updated.avatar, updated.avatarMimeType) || updated.image || null,
+      avatar: undefined,
+      avatarMimeType: undefined,
+    },
+  });
 }

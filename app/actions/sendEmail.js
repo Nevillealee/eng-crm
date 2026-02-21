@@ -1,18 +1,50 @@
 'use server';
 
-import nodemailer from 'nodemailer';
+/**
+ * Sends an email using the SMTP2GO REST API.
+ * @param {Object} params
+ * @param {string} params.to - Recipient email address
+ * @param {string} params.subject - Email subject
+ * @param {string} params.text - Plain text body
+ * @param {string} params.html - HTML body
+ */
+async function sendSmtp2GoEmail({ to, subject, text, html }) {
+  const apiKey = process.env.SMTP2GO_API_KEY;
+  const sender = process.env.EMAIL_SENDER || 'info@devcombine.com';
 
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  auth: {
-    user: process.env.GMAIL_USERNAME,
-    pass: process.env.GMAIL_PASSWORD,
-  },
-});
+  if (!apiKey) {
+    throw new Error('SMTP2GO_API_KEY is not configured.');
+  }
 
-function buildVerificationEmail({ name, verificationUrl, to }) {
-  const subject = 'Verify your ENG CRM email';
+  const payload = {
+    to: [to],
+    sender: sender,
+    subject: subject,
+    text_body: text,
+    html_body: html,
+  };
+
+  const response = await fetch('https://api.smtp2go.com/v3/email/send', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Smtp2go-Api-Key': apiKey,
+      'accept': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(`Email error: ${response.status} - ${JSON.stringify(errorData)}`);
+  }
+  console.log("Email sent successfully to:", to);
+  console.log("response status:", response.status);
+  return response.json();
+}
+
+export async function sendVerificationEmail({ name, verificationUrl, to }) {
+  const subject = 'Verify your Devcombine Engineering Portal email';
   const greeting = name ? `Hi ${name},` : 'Hi there,';
   const text = `${greeting}\n\nPlease verify your email address by clicking the link below:\n${verificationUrl}\n\nIf you did not create an account, you can ignore this email.`;
   const html = `
@@ -24,46 +56,44 @@ function buildVerificationEmail({ name, verificationUrl, to }) {
     </div>
   `;
 
-  return { to, subject, text, html };
+  try {
+    await sendSmtp2GoEmail({
+      to,
+      subject,
+      text,
+      html,
+    });
+    return { success: true, message: 'Verification email sent.' };
+  } catch (error) {
+    console.error('Email sending failed:', error);
+    return { success: false, message: 'Failed to send email.' };
+  }
 }
 
-export async function sendEmail(input) {
-  const payload = input?.get
-    ? {
-      type: 'contact',
-      name: input.get('name'),
-      email: input.get('email'),
-      message: input.get('message'),
-    }
-    : input;
+export async function sendForgotPasswordEmail({ name, resetUrl, to }) {
+  const subject = 'Reset your Devcombine Engineering Portal password';
+  const greeting = name ? `Hi ${name},` : 'Hi there,';
+  const text = `${greeting}\n\nSomeone has requested a link to change your password. You can do this through the link below:\n${resetUrl}\n\nIf you didn't request this, please ignore this email.\nYour password won't change until you access the link above and create a new one.`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+      <p>${greeting}</p>
+      <p>Someone has requested a link to change your password. You can do this through the link below:</p>
+      <p><a href="${resetUrl}">${resetUrl}</a></p>
+      <p>If you didn't request this, please ignore this email.</p>
+      <p>Your password won't change until you access the link above and create a new one.</p>
+    </div>
+  `;
 
   try {
-    if (payload?.type === 'verify-email') {
-      const { to, subject, text, html } = buildVerificationEmail(payload);
-      await transporter.sendMail({
-        from: process.env.GMAIL_USERNAME,
-        to,
-        subject,
-        text,
-        html,
-      });
-      return { success: true, message: 'Verification email sent.' };
-    }
-
-    const name = payload?.name;
-    const email = payload?.email;
-    const message = payload?.message;
-
-    await transporter.sendMail({
-      from: process.env.GMAIL_USERNAME,
-      to: process.env.SUPPORT_EMAIL || 'recipient@example.com',
-      subject: `New message from ${name}`,
-      text: message,
-      replyTo: email,
+    await sendSmtp2GoEmail({
+      to,
+      subject,
+      text,
+      html,
     });
-    return { success: true, message: 'Email sent successfully!' };
+    return { success: true, message: 'Password reset email sent.' };
   } catch (error) {
-    console.error(error);
+    console.error('Email sending failed:', error);
     return { success: false, message: 'Failed to send email.' };
   }
 }

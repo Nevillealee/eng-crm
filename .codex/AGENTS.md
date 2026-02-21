@@ -2,7 +2,7 @@
 
 ## Project overview
 
-ENG CRM — a customer-relationship management app with email/password auth built on Next.js 16.1.3 App Router, React 19, JavaScript (no TypeScript in app code), MUI v7, Prisma 7 + PostgreSQL, and NextAuth v5 beta.
+Devcombine Engineering Portal — a customer-relationship management app with email/password auth built on Next.js 16.1.3 App Router, React 19, JavaScript (no TypeScript in app code), MUI v7, Prisma 7 + PostgreSQL, and NextAuth v5 beta.
 
 ## Product requirements
 
@@ -25,7 +25,7 @@ npx prisma generate   # outputs to generated/prisma/, not node_modules
 yarn dev              # starts Next.js dev server
 ```
 
-Required env vars (see `.env` or hosting dashboard): `POSTGRES_URL` (or `POSTGRES_URL_NON_POOLING` / `POSTGRES_PRISMA_URL`), `NEXTAUTH_SECRET`, `GMAIL_USERNAME`, `GMAIL_PASSWORD`, `NEXT_PUBLIC_APP_URL`.
+Required env vars (see `.env` or hosting dashboard): `POSTGRES_URL` (or `POSTGRES_URL_NON_POOLING` / `POSTGRES_PRISMA_URL`), `NEXTAUTH_SECRET`, `EMAIL_USERNAME`, `EMAIL_PASSWORD`, `NEXT_PUBLIC_APP_URL`.
 
 ## Build & lint
 
@@ -62,7 +62,7 @@ Required env vars (see `.env` or hosting dashboard): `POSTGRES_URL` (or `POSTGRE
 1. **Signup** → `POST /api/signup` creates `User` + `VerificationToken`, sends verification email via `app/actions/sendEmail.js`.
 2. **Verify** → `GET /api/verify-email?token=...&email=...` sets `emailVerified`, deletes token.
 3. **Resend** → `POST /api/resend-verification` re-issues token for unverified users.
-4. **Email** → `app/actions/sendEmail.js` (`"use server"`) uses Nodemailer + Gmail SMTP. Dispatches on `payload.type` (`verify-email` or generic contact).
+4. **Email** → `app/actions/sendEmail.js` (`"use server"`) uses SMTP2GO REST API. Dispatches on `payload.type` (`verify-email` or generic contact).
 
 ## Styling guidelines
 

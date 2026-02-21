@@ -18,8 +18,8 @@ export default function Footer() {
           {/* 1. Brand and short product description */}
           <Grid size={{ xs: 12, md: 4 }}>
             <Stack spacing={2}>
-              <Typography variant="h6" fontWeight="bold">
-                ENG CRM
+                            <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
+                Devcombine Engineering Portal
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 A powerful customer relationship management tool designed for engineering teams.
@@ -64,7 +64,7 @@ export default function Footer() {
               <Link href="#" color="text.secondary" underline="hover">Terms of Service</Link>
               <Link href="#" color="text.secondary" underline="hover">Cookie Policy</Link>
               <Typography variant="caption" color="text.secondary" sx={{ mt: 2 }}>
-                2026 ENG CRM. All rights reserved.
+                                &copy; {new Date().getFullYear()} Devcombine Engineering Portal. All rights reserved.
                 <br />
                 Trusted by engineering teams worldwide.
               </Typography>

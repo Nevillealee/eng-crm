@@ -32,6 +32,8 @@ model User {
   avatar        Bytes?
   avatarMimeType String? @map("avatar_mime_type")
   password      String
+  resetPasswordToken String? @unique @map("reset_password_token")
+  resetPasswordExpires DateTime? @map("reset_password_expires")
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
   lastLogin     DateTime? @map("last_login")

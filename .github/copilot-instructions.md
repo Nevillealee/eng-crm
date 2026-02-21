@@ -1,7 +1,7 @@
 # Copilot instructions
 
 ## Project snapshot
-- **ENG CRM** – a customer-relationship management app with email/password auth.
+- **Devcombine Engineering Portal** – a customer-relationship management app with email/password auth.
 - Next.js 16.1.3 App Router, React 19, JavaScript (no TypeScript in app code).
 - UI: **MUI v7** (`@mui/material`) — not Tailwind utilities in JSX. Tailwind is installed but `globals.css` is minimal; all component styling uses MUI's `sx` prop and theme.
 - Database: PostgreSQL via **Prisma 7** with the `@prisma/adapter-pg` driver adapter.
@@ -23,7 +23,7 @@
 1. Client POST to [app/api/signup/route.js](app/api/signup/route.js) — creates `User` + `VerificationToken`, sends email.
 2. Verification link hits [app/api/verify-email/route.js](app/api/verify-email/route.js) (GET) — sets `emailVerified`, deletes token.
 3. [app/api/resend-verification/route.js](app/api/resend-verification/route.js) re-issues a token for unverified users.
-4. Emails sent via **Nodemailer** with Gmail SMTP in [app/actions/sendEmail.js](app/actions/sendEmail.js) (a `"use server"` action). The `sendEmail` function handles both `verify-email` and generic contact types by inspecting `payload.type`.
+4. Emails sent via **SMTP2GO REST API** in [app/actions/sendEmail.js](app/actions/sendEmail.js) (a `"use server"` action). The `sendEmail` function handles both `verify-email` and generic contact types by inspecting `payload.type`.
 
 ### Database ([prisma/schema.prisma](prisma/schema.prisma))
 - Models: `User`, `Account`, `Session`, `VerificationToken` (standard NextAuth schema extended with `firstName`, `lastName`, `avatar` as `Bytes`, `avatarMimeType`, `lastLogin`).
@@ -102,7 +102,7 @@ Use strong visual hierarchy and consistent spacing to keep the footer scannable.
 - Prisma commands: `npx prisma generate`, `npx prisma migrate dev`, `npx prisma studio`
 
 ## Environment variables
-`POSTGRES_URL`, `POSTGRES_URL_NON_POOLING`, `POSTGRES_PRISMA_URL` (at least one), `NEXTAUTH_SECRET` or `SUPABASE_JWT_SECRET`, `GMAIL_USERNAME`, `GMAIL_PASSWORD`, `NEXT_PUBLIC_APP_URL` or `NEXTAUTH_URL` (for verification links).
+`POSTGRES_URL`, `POSTGRES_URL_NON_POOLING`, `POSTGRES_PRISMA_URL` (at least one), `NEXTAUTH_SECRET` or `SUPABASE_JWT_SECRET`, `EMAIL_USERNAME`, `EMAIL_PASSWORD`, `NEXT_PUBLIC_APP_URL` or `NEXTAUTH_URL` (for verification links).
 
 ## Notes for agents
 - When adding routes, use the App Router convention under `app/`.

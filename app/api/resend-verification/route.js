@@ -4,7 +4,7 @@ import {
   buildVerificationUrl,
   createVerificationTokenRecord,
 } from "../../../lib/email-verification";
-import { sendEmail } from "../../actions/sendEmail";
+import { sendVerificationEmail } from "../../actions/sendEmail";
 
 async function issueVerificationEmail(email, name) {
   const { rawToken, tokenHash, expiresAt } = createVerificationTokenRecord();
@@ -23,8 +23,7 @@ async function issueVerificationEmail(email, name) {
 
   const verificationUrl = buildVerificationUrl(rawToken);
 
-  await sendEmail({
-    type: "verify-email",
+  await sendVerificationEmail({
     to: email,
     name,
     verificationUrl,

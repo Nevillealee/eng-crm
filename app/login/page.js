@@ -24,7 +24,6 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isResending, setIsResending] = useState(false);
   const [formState, setFormState] = useState({
     email: "",
     password: "",
@@ -83,33 +82,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleResendVerification = async () => {
-    if (!formState.email) {
-      setError("Enter your email to resend verification.");
-      return;
-    }
-    setError("");
-    setInfo("");
-    setIsResending(true);
-    try {
-      const response = await fetch("/api/resend-verification", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: formState.email }),
-      });
-      if (!response.ok) {
-        const payload = await response.json().catch(() => ({}));
-        setError(payload?.error || "Unable to resend verification email.");
-      } else {
-        setInfo("Verification email sent. Please check your inbox.");
-      }
-    } catch {
-      setError("Unable to resend verification email.");
-    } finally {
-      setIsResending(false);
-    }
-  };
-
   return (
     <Box
       sx={{
@@ -124,7 +96,7 @@ export default function LoginPage() {
           <Stack spacing={3}>
             <Stack spacing={1}>
               <Typography variant="overline" color="text.secondary">
-                ENG CRM
+                Devcombine Engineering Portal
               </Typography>
               <Typography variant="h4">Welcome back</Typography>
               <Typography color="text.secondary">
@@ -173,15 +145,6 @@ export default function LoginPage() {
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? "Signing in..." : "Sign in"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outlined"
-                  size="large"
-                  onClick={handleResendVerification}
-                  disabled={isResending}
-                >
-                  {isResending ? "Resending..." : "Resend verification email"}
                 </Button>
                 <Stack spacing={1} alignItems="center">
                   <Typography variant="body2" color="text.secondary">

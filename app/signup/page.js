@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Cropper from "react-easy-crop";
@@ -34,6 +34,7 @@ export default function SignupPage() {
     confirmPassword: "",
   });
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cropDialogOpen, setCropDialogOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState("");
@@ -43,10 +44,61 @@ export default function SignupPage() {
   const [avatarBlob, setAvatarBlob] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState("");
   const [avatarType, setAvatarType] = useState("");
+  const avatarPreviewObjectUrlRef = useRef(null);
+
+  const revokeAvatarPreviewObjectUrl = () => {
+    if (avatarPreviewObjectUrlRef.current) {
+      URL.revokeObjectURL(avatarPreviewObjectUrlRef.current);
+      avatarPreviewObjectUrlRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreviewObjectUrlRef.current) {
+        URL.revokeObjectURL(avatarPreviewObjectUrlRef.current);
+        avatarPreviewObjectUrlRef.current = null;
+      }
+    };
+  }, []);
+
+  const validateField = (name, value, currentForm) => {
+    switch (name) {
+      case "firstName":
+      case "lastName":
+        return value.trim() ? "" : "This field is required.";
+      case "email":
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? "" : "Enter a valid email address.";
+      case "password":
+        if (!value) return "Password is required.";
+        if (value.length < 8) return "Password must be at least 8 characters.";
+        if (Buffer.byteLength(value) > 32) return "Password must be 32 characters or fewer.";
+        return "";
+      case "confirmPassword": {
+        const pw = currentForm ? currentForm.password : formState.password;
+        return value === pw ? "" : "Passwords do not match.";
+      }
+      default:
+        return "";
+    }
+  };
 
   const handleChange = (event) => {
     const { name, value } = event.target;
     setFormState((prev) => ({ ...prev, [name]: value }));
+    // Clear the field error as soon as the user starts typing
+    setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+    // Also re-validate confirmPassword live when password changes
+    if (name === "password" && formState.confirmPassword) {
+      const mismatch = formState.confirmPassword !== value ? "Passwords do not match." : "";
+      setFieldErrors((prev) => ({ ...prev, confirmPassword: mismatch }));
+    }
+  };
+
+  const handleBlur = (event) => {
+    const { name, value } = event.target;
+    const err = validateField(name, value);
+    setFieldErrors((prev) => ({ ...prev, [name]: err }));
   };
 
   const handleImageSelection = (event) => {
@@ -79,7 +131,9 @@ export default function SignupPage() {
     }
     try {
       const blob = await getCroppedImage(selectedImage, croppedAreaPixels);
+      revokeAvatarPreviewObjectUrl();
       const previewUrl = URL.createObjectURL(blob);
+      avatarPreviewObjectUrlRef.current = previewUrl;
       setAvatarBlob(blob);
       setAvatarPreview(previewUrl);
       setAvatarType("image/png");
@@ -105,10 +159,14 @@ export default function SignupPage() {
     event.preventDefault();
     setError("");
 
-    if (formState.password !== formState.confirmPassword) {
-      setError("Passwords do not match.");
-      return;
+    // Validate all fields before submitting
+    const fields = ["firstName", "lastName", "email", "password", "confirmPassword"];
+    const newErrors = {};
+    for (const field of fields) {
+      newErrors[field] = validateField(field, formState[field]);
     }
+    setFieldErrors(newErrors);
+    if (Object.values(newErrors).some(Boolean)) return;
 
     setIsSubmitting(true);
 
@@ -135,6 +193,7 @@ export default function SignupPage() {
         return;
       }
 
+      revokeAvatarPreviewObjectUrl();
       router.push("/login?signup=success");
       router.refresh();
     } catch {
@@ -174,7 +233,7 @@ export default function SignupPage() {
             <Stack spacing={1}>
               <Typography variant="h4">Create your account</Typography>
               <Typography color="text.secondary">
-                Add your details to get started with ENG CRM.
+                Add your details to get started with Devcombine Engineering Portal.
               </Typography>
             </Stack>
             {error ? <Alert severity="error">{error}</Alert> : null}
@@ -186,6 +245,9 @@ export default function SignupPage() {
                     name="firstName"
                     value={formState.firstName}
                     onChange={handleChange}
+                    onBlur={handleBlur}
+                    error={!!fieldErrors.firstName}
+                    helperText={fieldErrors.firstName || ""}
                     required
                     fullWidth
                   />
@@ -194,6 +256,9 @@ export default function SignupPage() {
                     name="lastName"
                     value={formState.lastName}
                     onChange={handleChange}
+                    onBlur={handleBlur}
+                    error={!!fieldErrors.lastName}
+                    helperText={fieldErrors.lastName || ""}
                     required
                     fullWidth
                   />
@@ -204,6 +269,9 @@ export default function SignupPage() {
                   type="email"
                   value={formState.email}
                   onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={!!fieldErrors.email}
+                  helperText={fieldErrors.email || ""}
                   required
                   fullWidth
                 />
@@ -213,6 +281,10 @@ export default function SignupPage() {
                   type="password"
                   value={formState.password}
                   onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={!!fieldErrors.password}
+                  helperText={fieldErrors.password || ""}
+                  inputProps={{ maxLength: 32 }}
                   required
                   fullWidth
                 />
@@ -222,6 +294,10 @@ export default function SignupPage() {
                   type="password"
                   value={formState.confirmPassword}
                   onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={!!fieldErrors.confirmPassword}
+                  helperText={fieldErrors.confirmPassword || ""}
+                  inputProps={{ maxLength: 32 }}
                   required
                   fullWidth
                 />

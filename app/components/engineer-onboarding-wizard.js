@@ -246,7 +246,7 @@ export default function EngineerOnboardingWizard({ initialStep = 1 }) {
           <Stack spacing={3}>
             <Stack spacing={1}>
               <Typography variant="overline" color="text.secondary">
-                ENG CRM
+                Devcombine Engineering Portal
               </Typography>
               <Typography variant="h4">Engineer onboarding</Typography>
               <Typography color="text.secondary">

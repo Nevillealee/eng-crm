@@ -6,8 +6,8 @@ import ThemeRegistry from "./theme-registry";
 import Footer from "./components/footer";
 
 export const metadata = {
-  title: "ENG CRM",
-  description: "Secure login for ENG CRM",
+  title: "Devcombine Engineering Portal",
+  description: "Secure login for Devcombine Engineering Portal",
 };
 
 export default function RootLayout({ children }) {

@@ -29,7 +29,7 @@ export default function Dashboard({ session }) {
           <Stack spacing={3}>
             <Stack spacing={1}>
               <Typography variant="overline" color="text.secondary">
-                ENG CRM
+                Devcombine Engineering Portal
               </Typography>
               <Typography variant="h4">
                 Engineer account

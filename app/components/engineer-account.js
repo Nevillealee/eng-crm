@@ -1,23 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { signOut } from "next-auth/react";
+import Cropper from "react-easy-crop";
 import {
   Alert,
+  Avatar,
   Autocomplete,
   Box,
   Button,
   Chip,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   IconButton,
   MenuItem,
   Paper,
+  Slider,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { ENGINEER_SKILL_OPTIONS } from "../constants/engineer-skills";
+import getCroppedImage from "../signup/crop-image";
 
 const availabilityOptions = [
   { value: "available", label: "Available" },
@@ -25,6 +33,7 @@ const availabilityOptions = [
   { value: "unavailable", label: "Unavailable" },
 ];
 const skillOptionSet = new Set(ENGINEER_SKILL_OPTIONS);
+const placeholderAvatar = "/images/nonbinary-avatar.svg";
 
 function emptyHoliday() {
   return { label: "", startDate: "", endDate: "" };
@@ -53,7 +62,10 @@ function formatDateLabel(value) {
   if (Number.isNaN(parsed.getTime())) {
     return "TBD";
   }
-  return parsed.toLocaleDateString();
+  const year = parsed.getUTCFullYear();
+  const month = String(parsed.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(parsed.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 export default function EngineerAccount() {
@@ -64,12 +76,29 @@ export default function EngineerAccount() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [projects, setProjects] = useState([]);
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState("");
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [avatarBlob, setAvatarBlob] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState("");
+  const [avatarType, setAvatarType] = useState("");
+  const [avatarRemoved, setAvatarRemoved] = useState(false);
+  const avatarPreviewObjectUrlRef = useRef(null);
   const [form, setForm] = useState({
     skills: [],
     availabilityStatus: "available",
     availabilityNote: "",
     upcomingHolidays: [emptyHoliday()],
   });
+
+  const revokeAvatarPreviewObjectUrl = () => {
+    if (avatarPreviewObjectUrlRef.current) {
+      URL.revokeObjectURL(avatarPreviewObjectUrlRef.current);
+      avatarPreviewObjectUrlRef.current = null;
+    }
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -100,6 +129,7 @@ export default function EngineerAccount() {
           availabilityNote: profile.availabilityNote || "",
           upcomingHolidays: holidays.length ? holidays : [emptyHoliday()],
         });
+        setAvatarPreview(typeof profile.image === "string" ? profile.image : "");
       } catch (loadError) {
         if (mounted) {
           setError(loadError.message || "Unable to load profile.");
@@ -144,9 +174,81 @@ export default function EngineerAccount() {
     };
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (avatarPreviewObjectUrlRef.current) {
+        URL.revokeObjectURL(avatarPreviewObjectUrlRef.current);
+        avatarPreviewObjectUrlRef.current = null;
+      }
+    };
+  }, []);
+
   const handleFieldChange = (event) => {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleImageSelection = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setSelectedImage(reader.result);
+        setCropDialogOpen(true);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = (_, croppedPixels) => {
+    setCroppedAreaPixels(croppedPixels);
+  };
+
+  const handleCropCancel = () => {
+    setCropDialogOpen(false);
+    setSelectedImage("");
+  };
+
+  const handleCropSave = async () => {
+    if (!selectedImage || !croppedAreaPixels) {
+      return;
+    }
+    try {
+      const blob = await getCroppedImage(selectedImage, croppedAreaPixels);
+      revokeAvatarPreviewObjectUrl();
+      const previewUrl = URL.createObjectURL(blob);
+      avatarPreviewObjectUrlRef.current = previewUrl;
+      setAvatarBlob(blob);
+      setAvatarPreview(previewUrl);
+      setAvatarType("image/png");
+      setAvatarRemoved(false);
+      setCropDialogOpen(false);
+      setSelectedImage("");
+    } catch {
+      setError("Unable to process the image. Please try another file.");
+      setCropDialogOpen(false);
+    }
+  };
+
+  const handleAvatarRemove = () => {
+    revokeAvatarPreviewObjectUrl();
+    setAvatarBlob(null);
+    setAvatarType("");
+    setAvatarPreview("");
+    setAvatarRemoved(true);
+  };
+
+  const toBase64 = async (blob) => {
+    const buffer = await blob.arrayBuffer();
+    let binary = "";
+    const bytes = new Uint8Array(buffer);
+    bytes.forEach((byte) => {
+      binary += String.fromCharCode(byte);
+    });
+    return btoa(binary);
   };
 
   const handleHolidayChange = (index, key, value) => {
@@ -183,17 +285,27 @@ export default function EngineerAccount() {
     setSaving(true);
 
     try {
+      const avatarBase64 = avatarBlob ? await toBase64(avatarBlob) : null;
+      const payloadBody = {
+        skills: form.skills,
+        availabilityStatus: form.availabilityStatus,
+        availabilityNote: form.availabilityNote,
+        upcomingHolidays: form.upcomingHolidays.filter(
+          (item) => item.label || item.startDate || item.endDate
+        ),
+      };
+
+      if (avatarBase64) {
+        payloadBody.avatar = avatarBase64;
+        payloadBody.avatarType = avatarType || "image/png";
+      } else if (avatarRemoved) {
+        payloadBody.avatar = null;
+      }
+
       const response = await fetch("/api/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          skills: form.skills,
-          availabilityStatus: form.availabilityStatus,
-          availabilityNote: form.availabilityNote,
-          upcomingHolidays: form.upcomingHolidays.filter(
-            (item) => item.label || item.startDate || item.endDate
-          ),
-        }),
+        body: JSON.stringify(payloadBody),
       });
 
       const payload = await response.json().catch(() => ({}));
@@ -202,6 +314,12 @@ export default function EngineerAccount() {
         throw new Error(payload?.error || "Unable to save profile.");
       }
 
+      const updatedImage = payload?.profile?.image;
+      revokeAvatarPreviewObjectUrl();
+      setAvatarPreview(typeof updatedImage === "string" ? updatedImage : "");
+      setAvatarBlob(null);
+      setAvatarType("");
+      setAvatarRemoved(false);
       setInfo("Profile updated.");
     } catch (saveError) {
       setError(saveError.message || "Unable to save profile.");
@@ -243,7 +361,7 @@ export default function EngineerAccount() {
             <Stack sx={{ minHeight: { md: 560 } }} spacing={2}>
               <Stack spacing={0.5}>
                 <Typography variant="overline" color="text.secondary">
-                  ENG CRM
+                  Devcombine Engineering Portal
                 </Typography>
                 <Typography variant="h6">Account</Typography>
               </Stack>
@@ -282,6 +400,35 @@ export default function EngineerAccount() {
                     <Typography color="text.secondary">
                       Update your skillset and availability details.
                     </Typography>
+                    <Stack direction="row" spacing={2} alignItems="center">
+                      <Avatar
+                        src={avatarPreview || placeholderAvatar}
+                        sx={{ width: 64, height: 64 }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outlined"
+                        component="label"
+                        disabled={loading || saving}
+                      >
+                        Upload avatar
+                        <input
+                          hidden
+                          accept="image/*"
+                          type="file"
+                          onChange={handleImageSelection}
+                        />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="text"
+                        color="error"
+                        onClick={handleAvatarRemove}
+                        disabled={loading || saving || (!avatarPreview && !avatarBlob)}
+                      >
+                        Remove avatar
+                      </Button>
+                    </Stack>
                     <Autocomplete
                       multiple
                       options={ENGINEER_SKILL_OPTIONS}
@@ -444,6 +591,47 @@ export default function EngineerAccount() {
           </Box>
         </Paper>
       </Container>
+      <Dialog
+        open={cropDialogOpen}
+        onClose={handleCropCancel}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Adjust your avatar</DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          <Box sx={{ position: "relative", height: 300, bgcolor: "grey.100", borderRadius: 1 }}>
+            {selectedImage ? (
+              <Cropper
+                image={selectedImage}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                cropShape="round"
+                showGrid={false}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={handleCropComplete}
+              />
+            ) : null}
+          </Box>
+          <Box sx={{ mt: 3 }}>
+            <Typography gutterBottom>Zoom</Typography>
+            <Slider
+              value={zoom}
+              min={1}
+              max={3}
+              step={0.1}
+              onChange={(_, value) => setZoom(Array.isArray(value) ? value[0] : value)}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCropCancel}>Cancel</Button>
+          <Button onClick={handleCropSave} variant="contained">
+            Apply
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

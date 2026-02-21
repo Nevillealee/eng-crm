@@ -4,7 +4,10 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 First, run the development server:
 
-*On the first run you will need to generate the Prisma Client by running `npx prisma generate` after installing the dependencies with `yarn` or `npm install`.
+*On the first run you will need to
+1. Install the dependencies with `yarn` or `npm install`
+2. Generate the Prisma Client by running `npx prisma generate`
+3. Migrate the database by running `npx prisma migrate dev` (you can also use `npx prisma db push` if you don't want to create a migration file)
 
 
 ```bash

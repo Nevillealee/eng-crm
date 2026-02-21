@@ -1,4 +1,4 @@
-# Devcombine ENG CRM - MVP Backlog
+# Devcombine Engineering Portal - MVP Backlog
 
 This backlog is the working source of truth for MVP scope. Keep it updated as requirements evolve.
 
@@ -75,3 +75,13 @@ Legend:
   - CSV export for engineer list and projects.
   - Implemented in current build via `/api/admin/export/engineers`, `/api/admin/export/projects`, and `/admin` export actions in `Engineers`/`Projects` panels.
 
+## P2 - Future enhancements
+
+- Avatar cloud storage:
+  - Move avatar hosting from PostgreSQL `Bytes` column to S3 or equivalent cloud blob storage (e.g. AWS S3, Cloudflare R2, Supabase Storage).
+  - Store a URL reference on the `User` record instead of raw bytes.
+  - Update upload (signup, profile) and read paths (admin engineer list, engineer account) accordingly.
+- Admin calendar view:
+  - Add a calendar panel to the admin dashboard.
+  - Surfaces engineer time-off / upcoming holidays and project start/end dates in a unified calendar.
+  - Should support month/week views and be filterable by engineer or project.
