@@ -17,33 +17,13 @@ import {
   Typography,
 } from "@mui/material";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import { ENGINEER_SKILL_OPTIONS } from "../constants/engineer-skills";
-
-const availabilityOptions = [
-  { value: "available", label: "Available" },
-  { value: "partially_allocated", label: "Partially allocated" },
-  { value: "unavailable", label: "Unavailable" },
-];
-const skillOptionSet = new Set(ENGINEER_SKILL_OPTIONS);
-
-function emptyHoliday() {
-  return { label: "", startDate: "", endDate: "" };
-}
-
-function nextDateInputValue(value) {
-  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return "";
-  }
-
-  const [year, month, day] = value.split("-").map((item) => Number.parseInt(item, 10));
-  const parsed = new Date(Date.UTC(year, month - 1, day));
-  if (Number.isNaN(parsed.getTime())) {
-    return "";
-  }
-
-  parsed.setUTCDate(parsed.getUTCDate() + 1);
-  return parsed.toISOString().slice(0, 10);
-}
+import {
+  availabilityOptions,
+  engineerSkillOptions,
+  emptyHoliday,
+  nextDateInputValue,
+  skillOptionSet,
+} from "./profile-form-shared";
 
 export default function EngineerOnboardingWizard({ initialStep = 1 }) {
   const router = useRouter();
@@ -262,16 +242,12 @@ export default function EngineerOnboardingWizard({ initialStep = 1 }) {
                 <Stack spacing={2}>
                   <Autocomplete
                     multiple
-                    options={ENGINEER_SKILL_OPTIONS}
+                    options={engineerSkillOptions}
                     value={form.skills}
-                    onChange={(_, value) =>
-                      setForm((prev) => ({ ...prev, skills: value }))
-                    }
+                    onChange={(_, value) => setForm((prev) => ({ ...prev, skills: value }))}
                     filterSelectedOptions
                     disabled={loading || saving}
-                    renderInput={(params) => (
-                      <TextField {...params} label="Skills" fullWidth />
-                    )}
+                    renderInput={(params) => <TextField {...params} label="Skills" fullWidth />}
                   />
                 </Stack>
               ) : null}

@@ -3,23 +3,18 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Cropper from "react-easy-crop";
 import {
   Alert,
   Avatar,
   Box,
   Button,
   Container,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Paper,
-  Slider,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
+import AvatarCropDialog from "../components/avatar-crop-dialog";
 import getCroppedImage from "./crop-image";
 
 const placeholderAvatar = "/images/nonbinary-avatar.svg";
@@ -317,44 +312,18 @@ export default function SignupPage() {
           </Stack>
         </Paper>
       </Container>
-      <Dialog open={cropDialogOpen} onClose={handleCropCancel} fullWidth>
-        <DialogTitle>Adjust your avatar</DialogTitle>
-        <DialogContent>
-          <Box sx={{ position: "relative", width: "100%", height: 320 }}>
-            <Cropper
-              image={selectedImage}
-              crop={crop}
-              zoom={zoom}
-              aspect={1}
-              cropShape="round"
-              showGrid={false}
-              onCropChange={setCrop}
-              onZoomChange={setZoom}
-              onCropComplete={handleCropComplete}
-            />
-          </Box>
-          <Stack spacing={1} sx={{ mt: 2 }}>
-            <Typography variant="body2" color="text.secondary">
-              Zoom
-            </Typography>
-            <Slider
-              value={zoom}
-              min={1}
-              max={3}
-              step={0.1}
-              onChange={(_, value) =>
-                setZoom(Array.isArray(value) ? value[0] : value)
-              }
-            />
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCropCancel}>Cancel</Button>
-          <Button onClick={handleCropSave} variant="contained">
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <AvatarCropDialog
+        open={cropDialogOpen}
+        image={selectedImage}
+        crop={crop}
+        zoom={zoom}
+        onClose={handleCropCancel}
+        onApply={handleCropSave}
+        onCropChange={setCrop}
+        onZoomChange={setZoom}
+        onCropComplete={handleCropComplete}
+        applyLabel="Save"
+      />
     </Box>
   );
 }

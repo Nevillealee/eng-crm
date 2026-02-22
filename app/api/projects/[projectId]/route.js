@@ -13,10 +13,7 @@ import {
   toProjectDto,
 } from "../shared";
 import { PROJECT_CURRENCY_CODE_SET } from "../../../constants/project-currencies";
-
-function sortedIds(values) {
-  return [...values].sort((left, right) => left.localeCompare(right));
-}
+import { buildProjectChanges, isEndDateBeforeStartDate } from "./route-helpers";
 
 export async function PATCH(request, { params }) {
   const session = await auth();
@@ -93,11 +90,7 @@ export async function PATCH(request, { params }) {
   const effectiveStartDate = startDate || previousProject.startDate;
   const effectiveEndDate = hasEndDate ? endDate : previousProject.endDate;
 
-  if (
-    effectiveStartDate &&
-    effectiveEndDate &&
-    new Date(effectiveEndDate).getTime() < new Date(effectiveStartDate).getTime()
-  ) {
+  if (isEndDateBeforeStartDate(effectiveStartDate, effectiveEndDate)) {
     return NextResponse.json(
       { ok: false, error: "End date must be on or after start date." },
       { status: 400 }
@@ -155,56 +148,19 @@ export async function PATCH(request, { params }) {
       });
     });
 
-    const previousTeamMemberIds = sortedIds(
-      (previousProject.memberships || []).map((membership) => membership.userId)
-    );
-    const updatedTeamMemberIds = sortedIds(
-      (updated.memberships || []).map((membership) => membership.userId)
-    );
-    const changes = {};
-
-    if (typeof name !== "undefined" && previousProject.name !== updated.name) {
-      changes.name = { before: previousProject.name, after: updated.name };
-    }
-    if (typeof clientName !== "undefined" && previousProject.clientName !== updated.clientName) {
-      changes.clientName = { before: previousProject.clientName, after: updated.clientName };
-    }
-    if (typeof status !== "undefined" && previousProject.status !== updated.status) {
-      changes.status = { before: previousProject.status, after: updated.status };
-    }
-    if (typeof costPhp !== "undefined" && previousProject.costPhp !== updated.costPhp) {
-      changes.costPhp = { before: previousProject.costPhp, after: updated.costPhp };
-    }
-    if (typeof currencyCode !== "undefined" && previousProject.currencyCode !== updated.currencyCode) {
-      changes.currencyCode = { before: previousProject.currencyCode, after: updated.currencyCode };
-    }
-    if (
-      typeof startDate !== "undefined" &&
-      previousProject.startDate?.getTime() !== updated.startDate?.getTime()
-    ) {
-      changes.startDate = { before: previousProject.startDate, after: updated.startDate };
-    }
-    if (
-      typeof endDate !== "undefined" &&
-      (previousProject.endDate?.getTime() || null) !== (updated.endDate?.getTime() || null)
-    ) {
-      changes.endDate = { before: previousProject.endDate, after: updated.endDate };
-    }
-    if (typeof adminNotes !== "undefined" && (previousProject.adminNotes || null) !== (updated.adminNotes || null)) {
-      changes.adminNotes = {
-        before: previousProject.adminNotes || null,
-        after: updated.adminNotes || null,
-      };
-    }
-    if (
-      typeof validEngineerIds !== "undefined" &&
-      JSON.stringify(previousTeamMemberIds) !== JSON.stringify(updatedTeamMemberIds)
-    ) {
-      changes.teamMemberIds = {
-        before: previousTeamMemberIds,
-        after: updatedTeamMemberIds,
-      };
-    }
+    const changes = buildProjectChanges({
+      previousProject,
+      updatedProject: updated,
+      name,
+      clientName,
+      status,
+      costPhp,
+      currencyCode,
+      startDate,
+      endDate,
+      adminNotes,
+      validEngineerIds,
+    });
 
     if (Object.keys(changes).length > 0) {
       const isArchiveAction = changes.status?.after === "archived";

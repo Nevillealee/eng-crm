@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { signOut } from "next-auth/react";
-import Cropper from "react-easy-crop";
 import {
   Alert,
   Avatar,
@@ -11,48 +10,25 @@ import {
   Button,
   Chip,
   Container,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   IconButton,
   MenuItem,
   Paper,
-  Slider,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import { ENGINEER_SKILL_OPTIONS } from "../constants/engineer-skills";
+import AvatarCropDialog from "./avatar-crop-dialog";
+import {
+  availabilityOptions,
+  engineerSkillOptions,
+  emptyHoliday,
+  nextDateInputValue,
+  skillOptionSet,
+} from "./profile-form-shared";
 import getCroppedImage from "../signup/crop-image";
 
-const availabilityOptions = [
-  { value: "available", label: "Available" },
-  { value: "partially_allocated", label: "Partially allocated" },
-  { value: "unavailable", label: "Unavailable" },
-];
-const skillOptionSet = new Set(ENGINEER_SKILL_OPTIONS);
 const placeholderAvatar = "/images/nonbinary-avatar.svg";
-
-function emptyHoliday() {
-  return { label: "", startDate: "", endDate: "" };
-}
-
-function nextDateInputValue(value) {
-  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return "";
-  }
-
-  const [year, month, day] = value.split("-").map((item) => Number.parseInt(item, 10));
-  const parsed = new Date(Date.UTC(year, month - 1, day));
-  if (Number.isNaN(parsed.getTime())) {
-    return "";
-  }
-
-  parsed.setUTCDate(parsed.getUTCDate() + 1);
-  return parsed.toISOString().slice(0, 10);
-}
 
 function formatDateLabel(value) {
   if (!value) {
@@ -431,16 +407,12 @@ export default function EngineerAccount() {
                     </Stack>
                     <Autocomplete
                       multiple
-                      options={ENGINEER_SKILL_OPTIONS}
+                      options={engineerSkillOptions}
                       value={form.skills}
-                      onChange={(_, value) =>
-                        setForm((prev) => ({ ...prev, skills: value }))
-                      }
+                      onChange={(_, value) => setForm((prev) => ({ ...prev, skills: value }))}
                       filterSelectedOptions
                       disabled={loading || saving}
-                      renderInput={(params) => (
-                        <TextField {...params} label="Skills" fullWidth />
-                      )}
+                      renderInput={(params) => <TextField {...params} label="Skills" fullWidth />}
                     />
                     <TextField
                       select
@@ -591,47 +563,17 @@ export default function EngineerAccount() {
           </Box>
         </Paper>
       </Container>
-      <Dialog
+      <AvatarCropDialog
         open={cropDialogOpen}
+        image={selectedImage}
+        crop={crop}
+        zoom={zoom}
         onClose={handleCropCancel}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle>Adjust your avatar</DialogTitle>
-        <DialogContent sx={{ pt: 2 }}>
-          <Box sx={{ position: "relative", height: 300, bgcolor: "grey.100", borderRadius: 1 }}>
-            {selectedImage ? (
-              <Cropper
-                image={selectedImage}
-                crop={crop}
-                zoom={zoom}
-                aspect={1}
-                cropShape="round"
-                showGrid={false}
-                onCropChange={setCrop}
-                onZoomChange={setZoom}
-                onCropComplete={handleCropComplete}
-              />
-            ) : null}
-          </Box>
-          <Box sx={{ mt: 3 }}>
-            <Typography gutterBottom>Zoom</Typography>
-            <Slider
-              value={zoom}
-              min={1}
-              max={3}
-              step={0.1}
-              onChange={(_, value) => setZoom(Array.isArray(value) ? value[0] : value)}
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCropCancel}>Cancel</Button>
-          <Button onClick={handleCropSave} variant="contained">
-            Apply
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onApply={handleCropSave}
+        onCropChange={setCrop}
+        onZoomChange={setZoom}
+        onCropComplete={handleCropComplete}
+      />
     </Box>
   );
 }
