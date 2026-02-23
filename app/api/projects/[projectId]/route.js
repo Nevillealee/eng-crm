@@ -3,17 +3,16 @@ import { auth } from "../../../../auth";
 import prisma from "../../../../lib/prisma";
 import { recordAdminAudit } from "../../../../lib/admin-audit";
 import {
-  allowedProjectStatuses,
   isPrismaNotFoundError,
-  parseCostPhpInput,
-  parseCurrencyCodeInput,
-  parseDateInput,
-  parseTeamMemberIds,
   projectMembershipInclude,
   toProjectDto,
 } from "../shared";
-import { PROJECT_CURRENCY_CODE_SET } from "../../../constants/project-currencies";
 import { buildProjectChanges, isEndDateBeforeStartDate } from "./route-helpers";
+import {
+  getProjectPatchValidationError,
+  parseProjectPatchInput,
+  toProjectUpdateData,
+} from "./route-input";
 
 export async function PATCH(request, { params }) {
   const session = await auth();
@@ -31,47 +30,11 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ ok: false, error: "Project not found." }, { status: 404 });
   }
   const body = await request.json().catch(() => ({}));
+  const patchInput = parseProjectPatchInput(body);
+  const validationError = getProjectPatchValidationError(patchInput);
 
-  const name = typeof body?.name === "string" ? body.name.trim() : undefined;
-  const clientName = typeof body?.clientName === "string" ? body.clientName.trim() : undefined;
-  const status = typeof body?.status === "string" ? body.status : undefined;
-  const hasCostPhp = Object.prototype.hasOwnProperty.call(body || {}, "costPhp");
-  const costPhp = hasCostPhp ? parseCostPhpInput(body?.costPhp) : undefined;
-  const hasCurrencyCode = Object.prototype.hasOwnProperty.call(body || {}, "currencyCode");
-  const currencyCode = hasCurrencyCode
-    ? parseCurrencyCodeInput(body?.currencyCode, PROJECT_CURRENCY_CODE_SET)
-    : undefined;
-  const adminNotes = typeof body?.adminNotes === "string" ? body.adminNotes.trim() : undefined;
-  const hasStartDate = Object.prototype.hasOwnProperty.call(body || {}, "startDate");
-  const hasEndDate = Object.prototype.hasOwnProperty.call(body || {}, "endDate");
-  const startDate = hasStartDate ? parseDateInput(body?.startDate) : undefined;
-  const endDate =
-    hasEndDate && body?.endDate ? parseDateInput(body.endDate) : hasEndDate ? null : undefined;
-  const teamMemberIds = Array.isArray(body?.teamMemberIds)
-    ? parseTeamMemberIds(body.teamMemberIds)
-    : undefined;
-
-  if (typeof status !== "undefined" && !allowedProjectStatuses.has(status)) {
-    return NextResponse.json({ ok: false, error: "Invalid project status." }, { status: 400 });
-  }
-
-  if (hasCostPhp && costPhp === null) {
-    return NextResponse.json(
-      { ok: false, error: "Project cost must be a non-negative whole number." },
-      { status: 400 }
-    );
-  }
-
-  if (hasCurrencyCode && currencyCode === null) {
-    return NextResponse.json({ ok: false, error: "Invalid currency code." }, { status: 400 });
-  }
-
-  if (hasStartDate && !startDate) {
-    return NextResponse.json({ ok: false, error: "Invalid start date." }, { status: 400 });
-  }
-
-  if (hasEndDate && body?.endDate && !endDate) {
-    return NextResponse.json({ ok: false, error: "Invalid end date." }, { status: 400 });
+  if (validationError) {
+    return NextResponse.json({ ok: false, error: validationError }, { status: 400 });
   }
 
   const previousProject = await prisma.project.findUnique({
@@ -87,8 +50,8 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ ok: false, error: "Project not found." }, { status: 404 });
   }
 
-  const effectiveStartDate = startDate || previousProject.startDate;
-  const effectiveEndDate = hasEndDate ? endDate : previousProject.endDate;
+  const effectiveStartDate = patchInput.startDate || previousProject.startDate;
+  const effectiveEndDate = patchInput.hasEndDate ? patchInput.endDate : previousProject.endDate;
 
   if (isEndDateBeforeStartDate(effectiveStartDate, effectiveEndDate)) {
     return NextResponse.json(
@@ -98,11 +61,11 @@ export async function PATCH(request, { params }) {
   }
 
   const validEngineerIds =
-    typeof teamMemberIds === "undefined"
+    typeof patchInput.teamMemberIds === "undefined"
       ? undefined
       : (
           await prisma.user.findMany({
-            where: { id: { in: teamMemberIds }, isAdmin: false },
+            where: { id: { in: patchInput.teamMemberIds }, isAdmin: false },
             select: { id: true },
           })
         ).map((user) => user.id);
@@ -111,22 +74,7 @@ export async function PATCH(request, { params }) {
     const updated = await prisma.$transaction(async (tx) => {
       await tx.project.update({
         where: { id: projectId },
-        data: {
-          name: typeof name === "undefined" ? undefined : name.slice(0, 200),
-          clientName:
-            typeof clientName === "undefined" ? undefined : clientName.slice(0, 200),
-          costPhp,
-          currencyCode,
-          status,
-          startDate,
-          endDate,
-          adminNotes:
-            typeof adminNotes === "undefined"
-              ? undefined
-              : adminNotes
-              ? adminNotes.slice(0, 5000)
-              : null,
-        },
+        data: toProjectUpdateData(patchInput),
       });
 
       if (typeof validEngineerIds !== "undefined") {
@@ -151,14 +99,14 @@ export async function PATCH(request, { params }) {
     const changes = buildProjectChanges({
       previousProject,
       updatedProject: updated,
-      name,
-      clientName,
-      status,
-      costPhp,
-      currencyCode,
-      startDate,
-      endDate,
-      adminNotes,
+      name: patchInput.name,
+      clientName: patchInput.clientName,
+      status: patchInput.status,
+      costPhp: patchInput.costPhp,
+      currencyCode: patchInput.currencyCode,
+      startDate: patchInput.startDate,
+      endDate: patchInput.endDate,
+      adminNotes: patchInput.adminNotes,
       validEngineerIds,
     });
 

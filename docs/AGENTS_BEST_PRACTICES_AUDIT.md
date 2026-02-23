@@ -12,20 +12,45 @@ This audit found broad conformance on `var` avoidance and strict equality usage,
 
 ## 1) SOLID, single responsibility, and modularization violations
 
-These files are large multi-responsibility units and violate:
+Status: Completed on 2026-02-23.
+
+Target principles:
 - `Apply SOLID principles`
 - `One function, one responsibility`
 - `Split code into modules instead of one large file`
 - `Avoid large anonymous functions`
 
-Locations:
-- `app/components/admin-dashboard.js:181` (component start), file size `1677` lines.
-- `app/components/admin-dashboard.js:1097` (large inline IIFE in JSX that computes + renders a full engineer card subtree).
-- `app/components/engineer-account.js:71`, file size `637` lines.
-- `app/api/profile/route.js:193`, file size `431` lines (input parsing, validation, geo-IP, persistence, and auditing in one route module).
-- `app/components/engineer-onboarding-wizard.js:48`, file size `403` lines.
-- `app/signup/page.js:27`, file size `360` lines.
-- `app/api/projects/[projectId]/route.js:21`, file size `282` lines.
+Implemented refactors:
+- `app/components/admin-dashboard.js` split into orchestrator directory structure:
+  - `app/components/admin-dashboard/index.js`
+  - `app/components/admin-dashboard/panels/*`
+  - `app/components/admin-dashboard/shared/*`
+- `app/components/engineer-account.js` split into orchestrator directory structure:
+  - `app/components/engineer-account/index.js`
+  - `app/components/engineer-account/personal-panel.js`
+  - `app/components/engineer-account/projects-panel.js`
+- `app/components/engineer-onboarding-wizard.js` split into:
+  - `app/components/engineer-onboarding-wizard/index.js`
+  - `app/components/engineer-onboarding-wizard/profile.js`
+  - `app/components/engineer-onboarding-wizard/step-content.js`
+- `app/signup/page.js` split into:
+  - `app/signup/page.js` (orchestrator)
+  - `app/signup/form.js`
+  - `app/signup/validation.js`
+- `app/api/profile/route.js` split into:
+  - `app/api/profile/route.js` (HTTP boundary only)
+  - `app/api/profile/selectors.js`
+  - `app/api/profile/geoip.js`
+  - `app/api/profile/patch-input.js`
+  - `app/api/profile/audit.js`
+- `app/api/projects/[projectId]/route.js` split input parsing/validation into:
+  - `app/api/projects/[projectId]/route-input.js`
+
+Size evidence (post-refactor):
+- `app/api/profile/route.js` reduced to `93` lines.
+- `app/signup/page.js` reduced to `193` lines.
+- `app/api/projects/[projectId]/route.js` reduced to `186` lines.
+- `app/components/engineer-onboarding-wizard/index.js` reduced to `246` lines with step/profile logic extracted.
 
 ## 2) Async error handling not consistently graceful
 
