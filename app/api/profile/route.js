@@ -207,6 +207,8 @@ export async function PATCH(request) {
 
   const body = await request.json().catch(() => ({}));
 
+  const hasCityUpdate = typeof body?.city === "string";
+  const cityInput = hasCityUpdate ? body.city.trim().slice(0, 120) : undefined;
   const skills = parseSkills(body?.skills);
   const availabilityStatus =
     typeof body?.availabilityStatus === "string" ? body.availabilityStatus : null;
@@ -245,11 +247,13 @@ export async function PATCH(request) {
   }
 
   const derivedCity = deriveCityFromIp(request);
+  const city =
+    typeof cityInput !== "undefined" ? cityInput || null : derivedCity || previous.city || null;
 
   const updated = await prisma.user.update({
     where: { id: session.user.id },
     data: {
-      city: derivedCity || previous.city || null,
+      city,
       skills,
       availabilityStatus,
       availabilityNote: availabilityNote || null,

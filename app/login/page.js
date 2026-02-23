@@ -19,7 +19,7 @@ import {
 
 export default function LoginPage() {
   const router = useRouter();
-  const [callbackUrl, setCallbackUrl] = useState("/");
+  const [redirectTo, setRedirectTo] = useState("/");
   const [signupStatus, setSignupStatus] = useState("");
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
@@ -32,7 +32,8 @@ export default function LoginPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    setCallbackUrl(params.get("callbackUrl") || "/");
+    // Support current `redirectTo` plus legacy `callbackUrl` links.
+    setRedirectTo(params.get("redirectTo") || params.get("callbackUrl") || "/");
     setSignupStatus(params.get("signup") || "");
   }, []);
 
@@ -59,7 +60,7 @@ export default function LoginPage() {
         email: formState.email,
         password: formState.password,
         rememberMe: formState.rememberMe ? "true" : "false",
-        callbackUrl,
+        redirectTo,
       });
 
       if (result?.error) {
@@ -73,7 +74,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.push(result?.url || callbackUrl);
+      router.push(result?.url || redirectTo);
       router.refresh();
     } catch {
       setError("Sign-in is temporarily unavailable. Please try again in a few minutes.");

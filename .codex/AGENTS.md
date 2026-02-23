@@ -38,6 +38,7 @@ Required env vars (see `.env` or hosting dashboard): `POSTGRES_URL` (or `POSTGRE
 
 ## Code conventions
 
+- **Planning prerequisite** — before proposing or executing any implementation plan, always review `AGENT.md` / `AGENTS.md` instructions first and ensure the plan explicitly follows them.
 - **JavaScript only** — no TypeScript in `app/` code. The Prisma singleton (`lib/prisma.ts`) is the sole `.ts` file.
 - **Apply SOLID principles** — keep units focused (single responsibility), extend behavior via composition, keep contracts substitutable, prefer small interfaces, and depend on abstractions/helpers instead of concrete implementations.
 - **One function, one responsibility** — each function should do one thing well.
@@ -60,6 +61,8 @@ Required env vars (see `.env` or hosting dashboard): `POSTGRES_URL` (or `POSTGRE
 - **Document contracts** — add JSDoc to exported utilities and non-obvious functions to capture input/output expectations.
 - **Modern ES6+ usage** — use destructuring for cleaner object/array handling, arrow functions for concise callbacks, template literals for string composition, and optional chaining/nullish coalescing where they improve readability.
 - **Modular code** — split features into focused modules instead of one large file.
+- **Component orchestrator pattern** — for larger parent components, use a parent directory with `index.js` as the orchestrator and move extracted child pieces into separate files in that same parent component directory tree. Do not assume there will always be `panels/` or `shared/` folders; choose only the minimal structure needed.
+- **Reuse-first components** — before creating a new reusable component file, first check whether a suitable component already exists in the same parent component directory and reuse/adapt it there when possible.
 - **ES Modules** — use `import`/`export` for maintainability; use dynamic `import()` for on-demand loading where it materially improves performance.
 - **Performance guardrails** — debounce/throttle heavy event handlers (scroll/resize/input) and memoize expensive repeated computations.
 - **Error handling** — use `try...catch` around async/await failure boundaries and return meaningful, user-safe error messages.

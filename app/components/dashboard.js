@@ -12,7 +12,7 @@ import {
 
 export default function Dashboard({ session }) {
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: "/login" });
+    await signOut({ redirectTo: "/login" });
   };
 
   return (

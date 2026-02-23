@@ -209,7 +209,7 @@ export default function EngineerOnboardingWizard({ initialStep = 1 }) {
   };
 
   const handleSignOut = async () => {
-    await signOut({ callbackUrl: "/login" });
+    await signOut({ redirectTo: "/login" });
   };
 
   return (
@@ -304,7 +304,7 @@ export default function EngineerOnboardingWizard({ initialStep = 1 }) {
                           handleHolidayChange(index, "startDate", event.target.value)
                         }
                         disabled={loading || saving}
-                        InputLabelProps={{ shrink: true }}
+                        slotProps={{ inputLabel: { shrink: true } }}
                       />
                       <TextField
                         label="End date"
@@ -314,7 +314,7 @@ export default function EngineerOnboardingWizard({ initialStep = 1 }) {
                           handleHolidayChange(index, "endDate", event.target.value)
                         }
                         disabled={loading || saving}
-                        InputLabelProps={{ shrink: true }}
+                        slotProps={{ inputLabel: { shrink: true } }}
                       />
                       <IconButton
                         aria-label="Remove holiday"

@@ -279,7 +279,7 @@ export default function SignupPage() {
                   onBlur={handleBlur}
                   error={!!fieldErrors.password}
                   helperText={fieldErrors.password || ""}
-                  inputProps={{ maxLength: 32 }}
+                  slotProps={{ htmlInput: { maxLength: 32 } }}
                   required
                   fullWidth
                 />
@@ -292,7 +292,7 @@ export default function SignupPage() {
                   onBlur={handleBlur}
                   error={!!fieldErrors.confirmPassword}
                   helperText={fieldErrors.confirmPassword || ""}
-                  inputProps={{ maxLength: 32 }}
+                  slotProps={{ htmlInput: { maxLength: 32 } }}
                   required
                   fullWidth
                 />

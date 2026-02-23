@@ -46,7 +46,7 @@ export default function ProjectForm({
             value={form.costPhp}
             onChange={onFieldChange}
             disabled={loading || saving}
-            inputProps={{ min: 0, step: 1 }}
+            slotProps={{ htmlInput: { min: 0, step: 1 } }}
             fullWidth
           />
           <TextField
@@ -87,7 +87,7 @@ export default function ProjectForm({
               value={form.startDate}
               onChange={onFieldChange}
               disabled={loading || saving}
-              InputLabelProps={{ shrink: true }}
+              slotProps={{ inputLabel: { shrink: true } }}
               fullWidth
             />
             <TextField
@@ -97,7 +97,7 @@ export default function ProjectForm({
               value={form.endDate}
               onChange={onFieldChange}
               disabled={loading || saving}
-              InputLabelProps={{ shrink: true }}
+              slotProps={{ inputLabel: { shrink: true } }}
               fullWidth
             />
           </Stack>

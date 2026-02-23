@@ -124,7 +124,7 @@ export default function ResetPasswordPage() {
                   error={!!fieldErrors.password}
                   helperText={fieldErrors.password || ""}
                   autoComplete="new-password"
-                  inputProps={{ maxLength: 32 }}
+                  slotProps={{ htmlInput: { maxLength: 32 } }}
                   required
                   fullWidth
                 />
@@ -140,7 +140,7 @@ export default function ResetPasswordPage() {
                   error={!!fieldErrors.confirmPassword}
                   helperText={fieldErrors.confirmPassword || ""}
                   autoComplete="new-password"
-                  inputProps={{ maxLength: 32 }}
+                  slotProps={{ htmlInput: { maxLength: 32 } }}
                   required
                   fullWidth
                 />

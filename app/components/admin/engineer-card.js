@@ -112,7 +112,11 @@ export default function EngineerCard({
             color={availabilityColor || "default"}
             label={`Availability: ${availabilityLabel}`}
           />
-          {engineer.city ? <Chip size="small" variant="outlined" label={`City: ${engineer.city}`} /> : null}
+          <Chip
+            size="small"
+            variant="outlined"
+            label={`Location: ${engineer.city || "Not set"}`}
+          />
         </Stack>
         <Typography color="text.secondary">
           Skills: {Array.isArray(engineer.skills) && engineer.skills.length ? engineer.skills.join(", ") : "None"}
@@ -206,7 +210,7 @@ export default function EngineerCard({
               onChange={(event) =>
                 onUpdateEngineerDraft(engineer.id, "monthlySalaryPhpDraft", event.target.value)
               }
-              inputProps={{ min: 0, step: 1 }}
+              slotProps={{ htmlInput: { min: 0, step: 1 } }}
               sx={{ minWidth: { sm: 220 } }}
             />
             <TextField
