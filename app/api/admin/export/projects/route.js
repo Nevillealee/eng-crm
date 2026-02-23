@@ -10,86 +10,92 @@ function formatDateTime(value) {
 }
 
 export async function GET() {
-  const session = await auth();
+  try {
+    const session = await auth();
 
-  if (!session?.user?.id || session.user.role !== "admin") {
-    return new Response("Unauthorized", { status: 401 });
-  }
+    if (!session?.user?.id || session.user.role !== "admin") {
+      return new Response("Unauthorized", { status: 401 });
+    }
 
-  const projects = await prisma.project.findMany({
-    orderBy: [{ createdAt: "desc" }],
-    include: {
-      memberships: {
-        include: {
-          user: {
-            select: {
-              id: true,
-              email: true,
-              firstName: true,
-              lastName: true,
-              name: true,
+    const projects = await prisma.project.findMany({
+      orderBy: [{ createdAt: "desc" }],
+      include: {
+        memberships: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                firstName: true,
+                lastName: true,
+                name: true,
+              },
             },
           },
+          orderBy: { assignedAt: "asc" },
         },
-        orderBy: { assignedAt: "asc" },
       },
-    },
-  });
-
-  const headers = [
-    "id",
-    "name",
-    "clientName",
-    "status",
-    "cost",
-    "currencyCode",
-    "startDate",
-    "endDate",
-    "teamMembers",
-    "teamMemberIds",
-    "adminNotes",
-    "createdAt",
-    "updatedAt",
-  ];
-
-  const rows = projects.map((project) => {
-    const members = (project.memberships || []).map((membership) => membership.user);
-    const memberNames = members.map((member) => {
-      return (
-        member.name ||
-        `${member.firstName || ""} ${member.lastName || ""}`.trim() ||
-        member.email
-      );
     });
-    const memberIds = members.map((member) => member.id);
 
-    return [
-      project.id,
-      project.name,
-      project.clientName,
-      project.status,
-      project.costPhp,
-      project.currencyCode,
-      formatDateTime(project.startDate),
-      formatDateTime(project.endDate),
-      memberNames.join(" | "),
-      memberIds.join(" | "),
-      project.adminNotes || "",
-      formatDateTime(project.createdAt),
-      formatDateTime(project.updatedAt),
+    const headers = [
+      "id",
+      "name",
+      "clientName",
+      "status",
+      "cost",
+      "currencyCode",
+      "startDate",
+      "endDate",
+      "teamMembers",
+      "teamMemberIds",
+      "adminNotes",
+      "createdAt",
+      "updatedAt",
     ];
-  });
 
-  const content = toCsvContent(headers, rows);
-  const filename = `projects-${new Date().toISOString().slice(0, 10)}.csv`;
+    const rows = projects.map((project) => {
+      const members = (project.memberships || []).map((membership) => membership.user);
+      const memberNames = members.map((member) => {
+        return (
+          member.name ||
+          `${member.firstName || ""} ${member.lastName || ""}`.trim() ||
+          member.email
+        );
+      });
+      const memberIds = members.map((member) => member.id);
 
-  return new Response(content, {
-    status: 200,
-    headers: {
-      "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${filename}"`,
-      "Cache-Control": "no-store",
-    },
-  });
+      return [
+        project.id,
+        project.name,
+        project.clientName,
+        project.status,
+        project.costPhp,
+        project.currencyCode,
+        formatDateTime(project.startDate),
+        formatDateTime(project.endDate),
+        memberNames.join(" | "),
+        memberIds.join(" | "),
+        project.adminNotes || "",
+        formatDateTime(project.createdAt),
+        formatDateTime(project.updatedAt),
+      ];
+    });
+
+    const content = toCsvContent(headers, rows);
+    const filename = `projects-${new Date().toISOString().slice(0, 10)}.csv`;
+
+    return new Response(content, {
+      status: 200,
+      headers: {
+        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Cache-Control": "no-store",
+      },
+    });
+  } catch (error) {
+    console.error("Project export failed.", error);
+    return new Response("Export is temporarily unavailable. Please try again later.", {
+      status: 500,
+    });
+  }
 }
-

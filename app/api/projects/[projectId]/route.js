@@ -15,62 +15,62 @@ import {
 } from "./route-input";
 
 export async function PATCH(request, { params }) {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ ok: false, error: "Unauthorized." }, { status: 401 });
-  }
-
-  if (session.user.role !== "admin") {
-    return NextResponse.json({ ok: false, error: "Forbidden." }, { status: 403 });
-  }
-
-  const { projectId } = await params;
-  if (!projectId) {
-    return NextResponse.json({ ok: false, error: "Project not found." }, { status: 404 });
-  }
-  const body = await request.json().catch(() => ({}));
-  const patchInput = parseProjectPatchInput(body);
-  const validationError = getProjectPatchValidationError(patchInput);
-
-  if (validationError) {
-    return NextResponse.json({ ok: false, error: validationError }, { status: 400 });
-  }
-
-  const previousProject = await prisma.project.findUnique({
-    where: { id: projectId },
-    include: {
-      memberships: {
-        select: { userId: true },
-      },
-    },
-  });
-
-  if (!previousProject) {
-    return NextResponse.json({ ok: false, error: "Project not found." }, { status: 404 });
-  }
-
-  const effectiveStartDate = patchInput.startDate || previousProject.startDate;
-  const effectiveEndDate = patchInput.hasEndDate ? patchInput.endDate : previousProject.endDate;
-
-  if (isEndDateBeforeStartDate(effectiveStartDate, effectiveEndDate)) {
-    return NextResponse.json(
-      { ok: false, error: "End date must be on or after start date." },
-      { status: 400 }
-    );
-  }
-
-  const validEngineerIds =
-    typeof patchInput.teamMemberIds === "undefined"
-      ? undefined
-      : (
-          await prisma.user.findMany({
-            where: { id: { in: patchInput.teamMemberIds }, isAdmin: false },
-            select: { id: true },
-          })
-        ).map((user) => user.id);
-
   try {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ ok: false, error: "Unauthorized." }, { status: 401 });
+    }
+
+    if (session.user.role !== "admin") {
+      return NextResponse.json({ ok: false, error: "Forbidden." }, { status: 403 });
+    }
+
+    const { projectId } = await params;
+    if (!projectId) {
+      return NextResponse.json({ ok: false, error: "Project not found." }, { status: 404 });
+    }
+    const body = await request.json().catch(() => ({}));
+    const patchInput = parseProjectPatchInput(body);
+    const validationError = getProjectPatchValidationError(patchInput);
+
+    if (validationError) {
+      return NextResponse.json({ ok: false, error: validationError }, { status: 400 });
+    }
+
+    const previousProject = await prisma.project.findUnique({
+      where: { id: projectId },
+      include: {
+        memberships: {
+          select: { userId: true },
+        },
+      },
+    });
+
+    if (!previousProject) {
+      return NextResponse.json({ ok: false, error: "Project not found." }, { status: 404 });
+    }
+
+    const effectiveStartDate = patchInput.startDate || previousProject.startDate;
+    const effectiveEndDate = patchInput.hasEndDate ? patchInput.endDate : previousProject.endDate;
+
+    if (isEndDateBeforeStartDate(effectiveStartDate, effectiveEndDate)) {
+      return NextResponse.json(
+        { ok: false, error: "End date must be on or after start date." },
+        { status: 400 }
+      );
+    }
+
+    const validEngineerIds =
+      typeof patchInput.teamMemberIds === "undefined"
+        ? undefined
+        : (
+            await prisma.user.findMany({
+              where: { id: { in: patchInput.teamMemberIds }, isAdmin: false },
+              select: { id: true },
+            })
+          ).map((user) => user.id);
+
     const updated = await prisma.$transaction(async (tx) => {
       await tx.project.update({
         where: { id: projectId },
@@ -129,27 +129,31 @@ export async function PATCH(request, { params }) {
       return NextResponse.json({ ok: false, error: "Project not found." }, { status: 404 });
     }
 
-    throw error;
+    console.error("Project update failed.", error);
+    return NextResponse.json(
+      { ok: false, error: "Unable to update project right now. Please try again later." },
+      { status: 500 }
+    );
   }
 }
 
 export async function DELETE(_request, { params }) {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ ok: false, error: "Unauthorized." }, { status: 401 });
-  }
-
-  if (session.user.role !== "admin") {
-    return NextResponse.json({ ok: false, error: "Forbidden." }, { status: 403 });
-  }
-
-  const { projectId } = await params;
-  if (!projectId) {
-    return NextResponse.json({ ok: false, error: "Project not found." }, { status: 404 });
-  }
-
   try {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ ok: false, error: "Unauthorized." }, { status: 401 });
+    }
+
+    if (session.user.role !== "admin") {
+      return NextResponse.json({ ok: false, error: "Forbidden." }, { status: 403 });
+    }
+
+    const { projectId } = await params;
+    if (!projectId) {
+      return NextResponse.json({ ok: false, error: "Project not found." }, { status: 404 });
+    }
+
     const existing = await prisma.project.findUnique({
       where: { id: projectId },
       select: { id: true, name: true, status: true },
@@ -181,6 +185,10 @@ export async function DELETE(_request, { params }) {
       return NextResponse.json({ ok: false, error: "Project not found." }, { status: 404 });
     }
 
-    throw error;
+    console.error("Project delete failed.", error);
+    return NextResponse.json(
+      { ok: false, error: "Unable to delete project right now. Please try again later." },
+      { status: 500 }
+    );
   }
 }

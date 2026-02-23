@@ -31,25 +31,36 @@ async function issueVerificationEmail(email, name) {
 }
 
 export async function POST(request) {
-  const body = await request.json().catch(() => ({}));
-  const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
+  try {
+    const body = await request.json().catch(() => ({}));
+    const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
 
-  if (!email) {
+    if (!email) {
+      return NextResponse.json(
+        { ok: false, error: "Email is required." },
+        { status: 400 }
+      );
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user || user.emailVerified) {
+      return NextResponse.json({ ok: true });
+    }
+
+    await issueVerificationEmail(email, user.firstName || user.name || email);
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("Resend verification failed.", error);
     return NextResponse.json(
-      { ok: false, error: "Email is required." },
-      { status: 400 }
+      {
+        ok: false,
+        error: "Unable to resend verification email right now. Please try again later.",
+      },
+      { status: 500 }
     );
   }
-
-  const user = await prisma.user.findUnique({
-    where: { email },
-  });
-
-  if (!user || user.emailVerified) {
-    return NextResponse.json({ ok: true });
-  }
-
-  await issueVerificationEmail(email, user.firstName || user.name || email);
-
-  return NextResponse.json({ ok: true });
 }

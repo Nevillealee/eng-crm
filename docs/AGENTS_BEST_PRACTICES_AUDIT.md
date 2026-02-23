@@ -6,7 +6,7 @@ Scope reviewed: all first-party source/config files in this repo, excluding gene
 
 ## Summary
 
-This audit found broad conformance on `var` avoidance and strict equality usage, but repeated non-conformance in module sizing, async error handling consistency, magic constant centralization, optional chaining/undefined overuse, and missing JSDoc on exported utilities. Item `#11` (testing setup) is now completed.
+This audit found broad conformance on `var` avoidance and strict equality usage, with follow-up work needed in magic constant centralization, optional chaining/undefined overuse, and missing JSDoc coverage. Items `#1` (modularization), `#2` (async error handling), and `#11` (testing setup) are completed.
 
 ## Findings
 
@@ -54,26 +54,33 @@ Size evidence (post-refactor):
 
 ## 2) Async error handling not consistently graceful
 
-Violates:
+Status: Completed on 2026-02-23.
+
+Target principles:
 - `Handle Errors Gracefully`
 - `Use try...catch for async/await`
 - `Provide meaningful error messages`
 
-Locations with uncaught async flows or rethrow behavior:
-- `app/api/forgot-password/route.js:6`
-- `app/api/resend-verification/route.js:33`
-- `app/api/verify-email/route.js:5`
-- `app/api/projects/route.js:16`
-- `app/api/projects/route.js:47`
-- `app/api/admin/engineers/route.js:5`
-- `app/api/admin/audit-logs/route.js:5`
-- `app/api/admin/export/engineers/route.js:31`
-- `app/api/admin/export/projects/route.js:12`
-- `app/api/profile/route.js:193`
-- `app/api/profile/route.js:236`
-- `app/api/signup/route.js:190` (explicit `throw error`)
-- `app/api/projects/[projectId]/route.js:228` (explicit `throw error`)
-- `app/api/projects/[projectId]/route.js:280` (explicit `throw error`)
+Implemented coverage:
+- Added explicit async error boundaries and safe 5xx responses in:
+  - `app/api/forgot-password/route.js`
+  - `app/api/resend-verification/route.js`
+  - `app/api/verify-email/route.js`
+  - `app/api/projects/route.js` (`GET`, `POST`)
+  - `app/api/admin/engineers/route.js`
+  - `app/api/admin/audit-logs/route.js`
+  - `app/api/admin/export/engineers/route.js`
+  - `app/api/admin/export/projects/route.js`
+  - `app/api/profile/route.js` (`GET`, `PATCH`)
+  - `app/api/signup/route.js`
+  - `app/api/projects/[projectId]/route.js` (`PATCH`, `DELETE`)
+- Removed prior `throw error` rethrow paths in:
+  - `app/api/signup/route.js`
+  - `app/api/projects/[projectId]/route.js`
+
+Verification evidence:
+- New integration suite validating graceful 500 responses for these routes:
+  - `tests/integration/error-handling/api-routes.graceful-errors.test.js`
 
 ## 3) Email flow swallows failures (callers do not enforce success)
 
