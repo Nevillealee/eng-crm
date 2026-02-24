@@ -12,6 +12,11 @@ import {
   toProjectDto,
 } from "./shared";
 import { PROJECT_CURRENCY_CODE_SET } from "../../constants/project-currencies";
+import {
+  PROJECT_ADMIN_NOTES_MAX_LENGTH,
+  PROJECT_CLIENT_NAME_MAX_LENGTH,
+  PROJECT_NAME_MAX_LENGTH,
+} from "../../constants/text-limits";
 
 export async function GET() {
   try {
@@ -65,18 +70,19 @@ export async function POST(request) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const name = typeof body?.name === "string" ? body.name.trim() : "";
-    const clientName = typeof body?.clientName === "string" ? body.clientName.trim() : "";
-    const status = typeof body?.status === "string" ? body.status : "ongoing";
-    const costPhp = parseCostPhpInput(body?.costPhp);
+    const input = body && typeof body === "object" ? body : {};
+    const name = typeof input.name === "string" ? input.name.trim() : "";
+    const clientName = typeof input.clientName === "string" ? input.clientName.trim() : "";
+    const status = typeof input.status === "string" ? input.status : "ongoing";
+    const costPhp = parseCostPhpInput(input.costPhp);
     const currencyCode = parseCurrencyCodeInput(
-      body?.currencyCode || "PHP",
+      input.currencyCode || "PHP",
       PROJECT_CURRENCY_CODE_SET
     );
-    const startDate = parseDateInput(body?.startDate);
-    const endDate = body?.endDate ? parseDateInput(body.endDate) : null;
-    const adminNotes = typeof body?.adminNotes === "string" ? body.adminNotes.trim() : "";
-    const teamMemberIds = parseTeamMemberIds(body?.teamMemberIds);
+    const startDate = parseDateInput(input.startDate);
+    const endDate = input.endDate ? parseDateInput(input.endDate) : null;
+    const adminNotes = typeof input.adminNotes === "string" ? input.adminNotes.trim() : "";
+    const teamMemberIds = parseTeamMemberIds(input.teamMemberIds);
 
     if (!name || !clientName || !startDate) {
       return NextResponse.json(
@@ -121,14 +127,14 @@ export async function POST(request) {
 
     const project = await prisma.project.create({
       data: {
-        name: name.slice(0, 200),
-        clientName: clientName.slice(0, 200),
+        name: name.slice(0, PROJECT_NAME_MAX_LENGTH),
+        clientName: clientName.slice(0, PROJECT_CLIENT_NAME_MAX_LENGTH),
         costPhp,
         currencyCode,
         status,
         startDate,
         endDate,
-        adminNotes: adminNotes ? adminNotes.slice(0, 5000) : null,
+        adminNotes: adminNotes ? adminNotes.slice(0, PROJECT_ADMIN_NOTES_MAX_LENGTH) : null,
         memberships: validEngineerIds.length
           ? {
               createMany: {

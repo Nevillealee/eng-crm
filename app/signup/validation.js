@@ -1,3 +1,11 @@
+import {
+  getUtf8ByteLength,
+  PASSWORD_MAX_BYTES,
+  PASSWORD_MAX_BYTES_ERROR,
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_MIN_LENGTH_ERROR,
+} from "../constants/password-policy";
+
 export const signupFieldOrder = [
   "firstName",
   "lastName",
@@ -5,14 +13,6 @@ export const signupFieldOrder = [
   "password",
   "confirmPassword",
 ];
-
-function passwordByteLength(value) {
-  if (typeof Buffer !== "undefined") {
-    return Buffer.byteLength(value);
-  }
-
-  return new TextEncoder().encode(value).length;
-}
 
 export function validateSignupField(name, value, currentForm) {
   switch (name) {
@@ -25,11 +25,11 @@ export function validateSignupField(name, value, currentForm) {
       if (!value) {
         return "Password is required.";
       }
-      if (value.length < 8) {
-        return "Password must be at least 8 characters.";
+      if (value.length < PASSWORD_MIN_LENGTH) {
+        return PASSWORD_MIN_LENGTH_ERROR;
       }
-      if (passwordByteLength(value) > 32) {
-        return "Password must be 32 characters or fewer.";
+      if (getUtf8ByteLength(value) > PASSWORD_MAX_BYTES) {
+        return PASSWORD_MAX_BYTES_ERROR;
       }
       return "";
     case "confirmPassword":

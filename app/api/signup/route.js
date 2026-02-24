@@ -6,10 +6,20 @@ import {
   createVerificationTokenRecord,
 } from "../../../lib/email-verification";
 import { sendVerificationEmail } from "../../actions/sendEmail";
-
-const allowedAvatarMimeTypes = new Set(["image/png", "image/jpeg", "image/webp"]);
-const maxAvatarBytes = 2 * 1024 * 1024;
-const base64Pattern = /^[A-Za-z0-9+/]+={0,2}$/;
+import {
+  ALLOWED_AVATAR_MIME_TYPES,
+  AVATAR_MAX_BYTES,
+  AVATAR_INVALID_ERROR,
+  AVATAR_TOO_LARGE_ERROR,
+  AVATAR_TYPE_INVALID_ERROR,
+  BASE64_CONTENT_PATTERN,
+} from "../../constants/avatar";
+import {
+  PASSWORD_MAX_BYTES,
+  PASSWORD_MAX_BYTES_ERROR,
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_MIN_LENGTH_ERROR,
+} from "../../constants/password-policy";
 
 function isPrismaUniqueConstraintError(error) {
   return typeof error === "object" && error !== null && error.code === "P2002";
@@ -30,7 +40,7 @@ function parseSignupAvatar(avatar, avatarType) {
   }
 
   if (typeof avatar !== "string") {
-    return { error: "Avatar image is invalid." };
+    return { error: AVATAR_INVALID_ERROR };
   }
 
   const normalizedAvatar = avatar.trim();
@@ -38,22 +48,22 @@ function parseSignupAvatar(avatar, avatarType) {
     return { avatarBuffer: null, avatarMimeType: null };
   }
 
-  if (!base64Pattern.test(normalizedAvatar)) {
-    return { error: "Avatar image is invalid." };
+  if (!BASE64_CONTENT_PATTERN.test(normalizedAvatar)) {
+    return { error: AVATAR_INVALID_ERROR };
   }
 
-  if (typeof avatarType !== "string" || !allowedAvatarMimeTypes.has(avatarType)) {
-    return { error: "Avatar type is invalid." };
+  if (typeof avatarType !== "string" || !ALLOWED_AVATAR_MIME_TYPES.has(avatarType)) {
+    return { error: AVATAR_TYPE_INVALID_ERROR };
   }
 
   const estimatedBytes = estimateBase64ByteLength(normalizedAvatar);
-  if (!estimatedBytes || estimatedBytes > maxAvatarBytes) {
-    return { error: "Avatar must be 2MB or smaller." };
+  if (!estimatedBytes || estimatedBytes > AVATAR_MAX_BYTES) {
+    return { error: AVATAR_TOO_LARGE_ERROR };
   }
 
   const avatarBuffer = Buffer.from(normalizedAvatar, "base64");
-  if (!avatarBuffer.length || avatarBuffer.length > maxAvatarBytes) {
-    return { error: "Avatar must be 2MB or smaller." };
+  if (!avatarBuffer.length || avatarBuffer.length > AVATAR_MAX_BYTES) {
+    return { error: AVATAR_TOO_LARGE_ERROR };
   }
 
   return { avatarBuffer, avatarMimeType: avatarType };
@@ -115,16 +125,16 @@ export async function POST(request) {
       );
     }
 
-    if (normalizedPassword.length < 8) {
+    if (normalizedPassword.length < PASSWORD_MIN_LENGTH) {
       return NextResponse.json(
-        { error: "Password must be at least 8 characters." },
+        { error: PASSWORD_MIN_LENGTH_ERROR },
         { status: 400 }
       );
     }
 
-    if (Buffer.byteLength(normalizedPassword, "utf8") > 32) {
+    if (Buffer.byteLength(normalizedPassword, "utf8") > PASSWORD_MAX_BYTES) {
       return NextResponse.json(
-        { error: "Password must be 32 characters or fewer." },
+        { error: PASSWORD_MAX_BYTES_ERROR },
         { status: 400 }
       );
     }

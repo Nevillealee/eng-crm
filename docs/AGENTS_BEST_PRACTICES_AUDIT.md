@@ -6,7 +6,7 @@ Scope reviewed: all first-party source/config files in this repo, excluding gene
 
 ## Summary
 
-This audit found broad conformance on `var` avoidance and strict equality usage, with follow-up work needed in magic constant centralization, optional chaining/undefined overuse, and missing JSDoc coverage. Items `#1` (modularization), `#2` (async error handling), and `#11` (testing setup) are completed.
+This audit found broad conformance on `var` avoidance and strict equality usage. Tracked remediation items `#1`, `#2`, `#3`, `#4`, `#5`, `#6`, `#7`, `#9`, `#10`, `#11`, and `#12` are completed.
 
 ## Findings
 
@@ -84,146 +84,180 @@ Verification evidence:
 
 ## 3) Email flow swallows failures (callers do not enforce success)
 
-Violates:
+Status: Completed on 2026-02-23.
+
+Target principles:
 - `Handle Errors Gracefully`
 - `Provide meaningful error messages`
 
-Locations:
-- `app/actions/sendEmail.js:59` to `app/actions/sendEmail.js:70` catches and returns `{ success: false }` instead of throwing.
-- `app/actions/sendEmail.js:87` to `app/actions/sendEmail.js:98` catches and returns `{ success: false }` instead of throwing.
-- `app/actions/sendEmail.js:68`, `app/actions/sendEmail.js:96` logs error but does not force API-layer failure.
-- Call sites that await these functions but do not check returned success status:
-- `app/api/signup/route.js:79`
-- `app/api/signup/route.js:193`
-- `app/api/resend-verification/route.js:26`
-- `app/api/resend-verification/route.js:52`
-- `app/api/forgot-password/route.js:48`
+Implemented coverage:
+- Updated `app/actions/sendEmail.js` so mail send failures are not swallowed:
+  - `sendVerificationEmail` now propagates SMTP failure (throws) instead of returning `{ success: false }`.
+  - `sendForgotPasswordEmail` now propagates SMTP failure (throws) instead of returning `{ success: false }`.
+- Call paths now enforce those failures through existing API error boundaries:
+  - `app/api/signup/route.js`
+  - `app/api/resend-verification/route.js`
+  - `app/api/forgot-password/route.js`
+
+Verification evidence:
+- Added integration tests for email-delivery failure handling:
+  - `tests/integration/auth.email-flows.test.js`:
+    - signup returns 500 when verification email delivery fails
+    - resend-verification returns 500 when email delivery fails
+    - forgot-password returns 500 when email delivery fails
 
 ## 4) Magic numbers/strings are duplicated instead of centralized
 
-Violates:
+Status: Completed on 2026-02-24.
+
+Target principles:
 - `Avoid Magic Numbers & Strings`
 
-Password constraints duplicated (`8`, `32`):
-- `app/signup/page.js:74`
-- `app/signup/page.js:75`
-- `app/reset-password/page.js:30`
-- `app/api/signup/route.js:117`
-- `app/api/signup/route.js:124`
-- `app/api/reset-password/route.js:20`
-- `app/api/reset-password/route.js:28`
+Implemented coverage:
+- Added centralized constant modules:
+  - `app/constants/password-policy.js`
+  - `app/constants/avatar.js`
+  - `app/constants/text-limits.js`
+- Replaced duplicated password constraints (`8`, `32`) in:
+  - `app/signup/validation.js`
+  - `app/signup/form.js`
+  - `app/reset-password/page.js`
+  - `app/api/signup/route.js`
+  - `app/api/reset-password/route.js`
+- Replaced duplicated avatar limits/validation literals in:
+  - `app/api/signup/route.js`
+  - `app/api/profile/shared.js`
+- Replaced repeated truncation limits (`120/200/500/1000/5000`) in:
+  - `app/api/profile/geoip.js`
+  - `app/api/profile/patch-input.js`
+  - `app/api/profile/shared.js`
+  - `app/api/projects/route.js`
+  - `app/api/projects/[projectId]/route-input.js`
+  - `app/api/admin/engineers/[engineerId]/route.js`
+- Extended centralization to admin-audit truncation limits in:
+  - `lib/admin-audit.js`
 
-Avatar size cap duplicated (`2 * 1024 * 1024`):
-- `app/api/signup/route.js:11`
-- `app/api/profile/route.js:17`
-
-Repeated hard-coded truncation limits (`120/200/500/1000/5000`) not centralized:
-- `app/api/profile/route.js:64`
-- `app/api/profile/route.js:184`
-- `app/api/profile/route.js:190`
-- `app/api/profile/route.js:250`
-- `app/api/projects/route.js:112`
-- `app/api/projects/route.js:113`
-- `app/api/projects/route.js:119`
-- `app/api/projects/[projectId]/route.js:122`
-- `app/api/projects/[projectId]/route.js:124`
-- `app/api/projects/[projectId]/route.js:134`
-- `app/api/admin/engineers/[engineerId]/route.js:57`
+Verification evidence:
+- `yarn test tests/integration/auth.password-reset.test.js` (pass)
+- `yarn test tests/integration/projects.form-persistence.behavior.test.js` (pass)
+- `yarn test tests/integration/admin-engineers.compensation.behavior.test.js` (pass)
+- `yarn test tests/integration/auth.email-flows.test.js` (pass)
+- `yarn test tests/integration/profile.personal-info.behavior.test.js` (pass)
+- `yarn test tests/integration/onboarding/profile-onboarding.behavior.test.js` (pass)
+- `yarn test` (pass: `23` suites, `99` tests)
 
 ## 5) Overuse of safe operators and undefined checks in validated/internal paths
+
+Status: Completed on 2026-02-24.
 
 Violates:
 - `Do not overuse safe operators`
 - `Trust callers`
 - `Truthy checks — use !!value instead of undefined comparisons`
 
-Undefined comparisons and explicit `"undefined"` checks:
-- `lib/csv.js:2`
-- `app/reset-password/page.js:34`
-- `app/components/admin-dashboard.js:400`
-- `app/verify-email/page.js:13`
-- `app/verify-email/page.js:44`
-- `app/api/profile/route.js:95`
-- `app/api/signup/route.js:28`
-- `app/api/admin/engineers/[engineerId]/route.js:83`
-- `app/api/projects/[projectId]/route.js:108`
-- `app/api/projects/[projectId]/route.js:109`
-- `app/api/projects/[projectId]/route.js:122`
-- `app/api/projects/[projectId]/route.js:124`
-- `app/api/projects/[projectId]/route.js:131`
-- `app/api/projects/[projectId]/route.js:132`
+Implemented coverage:
+- Removed explicit `"undefined"` checks and simplified sentinel handling in:
+  - `lib/csv.js`
+  - `app/reset-password/page.js`
+  - `app/verify-email/page.js`
+  - `app/api/profile/patch-input.js`
+  - `app/api/profile/route.js`
+  - `app/api/admin/engineers/[engineerId]/route.js`
+- Refactored project patch/update paths to use explicit presence flags rather than `typeof ... === "undefined"` checks:
+  - `app/api/projects/[projectId]/route-input.js`
+  - `app/api/projects/[projectId]/route.js`
+  - `app/api/projects/[projectId]/route-helpers.js`
+- Reduced optional chaining in validated internal request-body parsing by normalizing payload objects first:
+  - `app/api/projects/route.js`
+  - `app/api/projects/[projectId]/route-input.js`
+  - `app/api/profile/patch-input.js`
+  - `app/api/admin/engineers/[engineerId]/route.js`
+- Optional chaining count across `app/`, `lib/`, and `auth.js` reduced from `112` to `82`, with remaining usage concentrated at external uncertainty boundaries (session/request payloads/api responses).
 
-Optional chaining density is high in internal flows (`113` total occurrences in app/lib/auth):
-- `app/components/admin-dashboard.js` (`22`)
-- `app/api/projects/[projectId]/route.js` (`15`)
-- `app/api/projects/route.js` (`11`)
-- `app/api/profile/route.js` (`9`)
-- `app/components/engineer-account.js` (`7`)
-- `auth.js` (`6`)
-- `app/components/admin/project-form.js` (`5`)
-- `app/api/admin/export/engineers/route.js` (`4`)
-- `app/api/admin/engineers/[engineerId]/route.js` (`4`)
+Verification evidence:
+- `yarn test tests/integration/projects.form-persistence.behavior.test.js` (pass)
+- `yarn test tests/integration/access-control/projects-api.access-control.test.js` (pass)
+- `yarn test tests/integration/admin-engineers.compensation.behavior.test.js` (pass)
+- `yarn test tests/integration/profile.personal-info.behavior.test.js` (pass)
+- `yarn test tests/integration/onboarding/profile-onboarding.behavior.test.js` (pass)
+- `yarn test` (pass: `23` suites, `99` tests)
+- `yarn lint` (pass with only pre-existing generated Prisma warnings)
 
 ## 6) Missing JSDoc on exported utilities/non-obvious helpers
+
+Status: Completed on 2026-02-24.
 
 Violates:
 - `Leverage JSDoc annotations`
 - `Document contracts`
 
-Locations:
-- `lib/admin-audit.js:10`
-- `lib/email-verification.js:18`
-- `lib/email-verification.js:25`
-- `lib/email-verification.js:34`
-- `lib/email-verification.js:45`
-- `lib/request-ip.js:140`
-- `lib/csv.js:27`
-- `lib/csv.js:40`
-- `app/api/projects/shared.js:20`
-- `app/api/projects/shared.js:33`
-- `app/api/projects/shared.js:46`
-- `app/api/projects/shared.js:61`
-- `app/api/projects/shared.js:69`
-- `app/api/projects/shared.js:95`
-- `app/api/projects/shared.js:108`
-- `app/signup/crop-image.js:1`
+Implemented coverage:
+- Added JSDoc contracts to exported helpers in:
+  - `lib/admin-audit.js`
+  - `lib/email-verification.js`
+  - `lib/request-ip.js`
+  - `lib/csv.js`
+  - `app/api/projects/shared.js`
+  - `app/signup/crop-image.js`
+
+Verification evidence:
+- `yarn lint` (pass with only pre-existing generated Prisma warnings)
+- `yarn test` (pass: `23` suites, `99` tests)
 
 ## 7) API response convention drift (`NextResponse.json` vs raw `Response`)
+
+Status: Completed on 2026-02-24.
 
 Violates:
 - `App Router — API routes use NextResponse.json()`
 
-Locations:
-- `app/api/admin/export/engineers/route.js:35` (raw `Response("Unauthorized", ...)`)
-- `app/api/admin/export/engineers/route.js:108` (raw `Response(content, ...)`)
-- `app/api/admin/export/projects/route.js:16` (raw `Response("Unauthorized", ...)`)
-- `app/api/admin/export/projects/route.js:86` (raw `Response(content, ...)`)
+Implemented coverage:
+- Replaced raw `Response` usage in export routes with `NextResponse`/`NextResponse.json`:
+  - `app/api/admin/export/engineers/route.js`
+  - `app/api/admin/export/projects/route.js`
+- Standardized unauthorized and 500 failure responses to JSON payloads while preserving CSV success responses via `new NextResponse(content, { headers })`.
+- Updated affected integration assertions:
+  - `tests/integration/access-control/admin-export.access-control.test.js`
+  - `tests/integration/error-handling/api-routes.graceful-errors.test.js`
+
+Verification evidence:
+- `yarn test tests/integration/access-control/admin-export.access-control.test.js` (pass)
+- `yarn test tests/integration/error-handling/api-routes.graceful-errors.test.js` (pass)
+- `yarn test` (pass: `23` suites, `99` tests)
+- `yarn lint` (pass with only pre-existing generated Prisma warnings)
 
 
 ## 9) Dot-notation preference drift
 
+Status: Completed on 2026-02-24.
+
 Violates:
 - `Prefer dot notation over bracket notation`
 
-Location:
-- `prisma.config.ts:24`
-- `prisma.config.ts:25`
-- `prisma.config.ts:26`
+Implemented coverage:
+- Replaced bracket-style env access with dot notation in:
+  - `prisma.config.ts`
+
+Verification evidence:
+- `yarn lint` (pass with only pre-existing generated Prisma warnings)
+- `yarn test` (pass: `23` suites, `99` tests)
 
 ## 10) Self-documenting code/comment discipline drift
+
+Status: Completed on 2026-02-24.
 
 Violates:
 - `Code should explain itself; comments should explain why, not what`
 - `Avoid over-commenting obvious logic`
 
-Locations with "what" comments for obvious behavior:
-- `app/signup/page.js:89`
-- `app/signup/page.js:91`
-- `app/signup/page.js:162`
-- `app/components/footer.js:18`
-- `app/components/footer.js:31`
-- `app/components/footer.js:44`
-- `app/components/footer.js:57`
+Implemented coverage:
+- Removed obvious "what" comments and kept intent clear via structure/naming in:
+  - `app/components/footer.js`
+- Confirmed `app/signup/page.js` no longer contains the previously flagged "what" comments after earlier modularization work.
+
+Verification evidence:
+- `yarn lint` (pass with only pre-existing generated Prisma warnings)
+- `yarn test` (pass: `23` suites, `99` tests)
 
 ## 11) Completed: Testing setup and feature integration tests
 
@@ -251,13 +285,20 @@ Verification evidence:
 
 ## 12) Formatting consistency drift (Prettier-style)
 
+Status: Completed on 2026-02-24.
+
 Violates:
 - `Maintain Prettier-compatible formatting`
 
-Locations:
-- `app/components/footer.js:21` (mis-indented typography line)
-- `app/components/footer.js:67` (mis-indented copyright line)
-- `lib/prisma.ts:4` and `lib/prisma.ts:5` (quote/style inconsistency vs predominant repo style)
+Implemented coverage:
+- Fixed footer indentation and normalized JSX formatting in:
+  - `app/components/footer.js`
+- Aligned import quote/style consistency in:
+  - `lib/prisma.ts`
+
+Verification evidence:
+- `yarn lint` (pass with only pre-existing generated Prisma warnings)
+- `yarn test` (pass: `23` suites, `99` tests)
 
 ## Compliant checks (no violations found)
 

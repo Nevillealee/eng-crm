@@ -6,33 +6,49 @@ import {
   parseTeamMemberIds,
 } from "../shared";
 import { PROJECT_CURRENCY_CODE_SET } from "../../../constants/project-currencies";
+import {
+  PROJECT_ADMIN_NOTES_MAX_LENGTH,
+  PROJECT_CLIENT_NAME_MAX_LENGTH,
+  PROJECT_NAME_MAX_LENGTH,
+} from "../../../constants/text-limits";
 
 function hasOwnProperty(source, key) {
   return Object.prototype.hasOwnProperty.call(source || {}, key);
 }
 
 export function parseProjectPatchInput(body) {
-  const name = typeof body?.name === "string" ? body.name.trim() : undefined;
-  const clientName = typeof body?.clientName === "string" ? body.clientName.trim() : undefined;
-  const status = typeof body?.status === "string" ? body.status : undefined;
-  const hasCostPhp = hasOwnProperty(body, "costPhp");
-  const costPhp = hasCostPhp ? parseCostPhpInput(body?.costPhp) : undefined;
-  const hasCurrencyCode = hasOwnProperty(body, "currencyCode");
+  const source = body && typeof body === "object" ? body : {};
+  const hasName = hasOwnProperty(source, "name");
+  const hasClientName = hasOwnProperty(source, "clientName");
+  const hasStatus = hasOwnProperty(source, "status");
+  const hasAdminNotes = hasOwnProperty(source, "adminNotes");
+
+  const name = hasName && typeof source.name === "string" ? source.name.trim() : undefined;
+  const clientName =
+    hasClientName && typeof source.clientName === "string" ? source.clientName.trim() : undefined;
+  const status = hasStatus && typeof source.status === "string" ? source.status : undefined;
+  const hasCostPhp = hasOwnProperty(source, "costPhp");
+  const costPhp = hasCostPhp ? parseCostPhpInput(source.costPhp) : undefined;
+  const hasCurrencyCode = hasOwnProperty(source, "currencyCode");
   const currencyCode = hasCurrencyCode
-    ? parseCurrencyCodeInput(body?.currencyCode, PROJECT_CURRENCY_CODE_SET)
+    ? parseCurrencyCodeInput(source.currencyCode, PROJECT_CURRENCY_CODE_SET)
     : undefined;
-  const adminNotes = typeof body?.adminNotes === "string" ? body.adminNotes.trim() : undefined;
-  const hasStartDate = hasOwnProperty(body, "startDate");
-  const hasEndDate = hasOwnProperty(body, "endDate");
-  const startDate = hasStartDate ? parseDateInput(body?.startDate) : undefined;
+  const adminNotes =
+    hasAdminNotes && typeof source.adminNotes === "string" ? source.adminNotes.trim() : undefined;
+  const hasStartDate = hasOwnProperty(source, "startDate");
+  const hasEndDate = hasOwnProperty(source, "endDate");
+  const startDate = hasStartDate ? parseDateInput(source.startDate) : undefined;
+  const hasEndDateValue = hasEndDate && !!source.endDate;
   const endDate =
-    hasEndDate && body?.endDate ? parseDateInput(body.endDate) : hasEndDate ? null : undefined;
-  const teamMemberIds = Array.isArray(body?.teamMemberIds)
-    ? parseTeamMemberIds(body.teamMemberIds)
-    : undefined;
+    hasEndDateValue ? parseDateInput(source.endDate) : hasEndDate ? null : undefined;
+  const hasTeamMemberIds = Array.isArray(source.teamMemberIds);
+  const teamMemberIds = hasTeamMemberIds ? parseTeamMemberIds(source.teamMemberIds) : undefined;
 
   return {
-    body,
+    hasName,
+    hasClientName,
+    hasStatus,
+    hasAdminNotes,
     name,
     clientName,
     status,
@@ -43,14 +59,16 @@ export function parseProjectPatchInput(body) {
     adminNotes,
     hasStartDate,
     hasEndDate,
+    hasEndDateValue,
     startDate,
     endDate,
+    hasTeamMemberIds,
     teamMemberIds,
   };
 }
 
 export function getProjectPatchValidationError(input) {
-  if (typeof input.status !== "undefined" && !allowedProjectStatuses.has(input.status)) {
+  if (typeof input.status === "string" && !allowedProjectStatuses.has(input.status)) {
     return "Invalid project status.";
   }
 
@@ -66,7 +84,7 @@ export function getProjectPatchValidationError(input) {
     return "Invalid start date.";
   }
 
-  if (input.hasEndDate && input.body?.endDate && !input.endDate) {
+  if (input.hasEndDateValue && !input.endDate) {
     return "Invalid end date.";
   }
 
@@ -74,20 +92,26 @@ export function getProjectPatchValidationError(input) {
 }
 
 export function toProjectUpdateData(input) {
+  const name = typeof input.name === "string" ? input.name.slice(0, PROJECT_NAME_MAX_LENGTH) : undefined;
+  const clientName =
+    typeof input.clientName === "string"
+      ? input.clientName.slice(0, PROJECT_CLIENT_NAME_MAX_LENGTH)
+      : undefined;
+  const adminNotes =
+    typeof input.adminNotes === "string"
+      ? input.adminNotes
+        ? input.adminNotes.slice(0, PROJECT_ADMIN_NOTES_MAX_LENGTH)
+        : null
+      : undefined;
+
   return {
-    name: typeof input.name === "undefined" ? undefined : input.name.slice(0, 200),
-    clientName:
-      typeof input.clientName === "undefined" ? undefined : input.clientName.slice(0, 200),
+    name: input.hasName ? name : undefined,
+    clientName: input.hasClientName ? clientName : undefined,
     costPhp: input.costPhp,
     currencyCode: input.currencyCode,
     status: input.status,
     startDate: input.startDate,
     endDate: input.endDate,
-    adminNotes:
-      typeof input.adminNotes === "undefined"
-        ? undefined
-        : input.adminNotes
-        ? input.adminNotes.slice(0, 5000)
-        : null,
+    adminNotes: input.hasAdminNotes ? adminNotes : undefined,
   };
 }

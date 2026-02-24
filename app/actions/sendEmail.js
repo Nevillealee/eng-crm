@@ -56,18 +56,14 @@ export async function sendVerificationEmail({ name, verificationUrl, to }) {
     </div>
   `;
 
-  try {
-    await sendSmtp2GoEmail({
-      to,
-      subject,
-      text,
-      html,
-    });
-    return { success: true, message: 'Verification email sent.' };
-  } catch (error) {
-    console.error('Email sending failed:', error);
-    return { success: false, message: 'Failed to send email.' };
-  }
+  await sendSmtp2GoEmail({
+    to,
+    subject,
+    text,
+    html,
+  });
+
+  return { success: true, message: 'Verification email sent.' };
 }
 
 export async function sendForgotPasswordEmail({ name, resetUrl, to }) {
@@ -84,16 +80,12 @@ export async function sendForgotPasswordEmail({ name, resetUrl, to }) {
     </div>
   `;
 
-  try {
-    await sendSmtp2GoEmail({
-      to,
-      subject,
-      text,
-      html,
-    });
-    return { success: true, message: 'Password reset email sent.' };
-  } catch (error) {
-    console.error('Email sending failed:', error);
-    return { success: false, message: 'Failed to send email.' };
-  }
+  await sendSmtp2GoEmail({
+    to,
+    subject,
+    text,
+    html,
+  });
+
+  return { success: true, message: 'Password reset email sent.' };
 }

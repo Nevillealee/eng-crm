@@ -1,3 +1,10 @@
+/**
+ * Produces a circular PNG blob from the selected crop region.
+ *
+ * @param {string} imageSrc
+ * @param {{ x: number, y: number, width: number, height: number }} pixelCrop
+ * @returns {Promise<Blob>}
+ */
 export default function getCroppedImage(imageSrc, pixelCrop) {
   return new Promise((resolve, reject) => {
     const image = new Image();

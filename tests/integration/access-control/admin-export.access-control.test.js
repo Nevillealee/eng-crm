@@ -12,9 +12,10 @@ describe("Given admin CSV export endpoints", () => {
 
     const { GET } = await import("../../../app/api/admin/export/engineers/route.js");
     const response = await GET();
+    const payload = await response.json();
 
     expect(response.status).toBe(401);
-    expect(await response.text()).toBe("Unauthorized");
+    expect(payload).toEqual({ ok: false, error: "Unauthorized." });
   });
 
   it("When no session exists, then GET /api/admin/export/projects is unauthorized", async () => {
@@ -30,9 +31,10 @@ describe("Given admin CSV export endpoints", () => {
 
     const { GET } = await import("../../../app/api/admin/export/projects/route.js");
     const response = await GET();
+    const payload = await response.json();
 
     expect(response.status).toBe(401);
-    expect(await response.text()).toBe("Unauthorized");
+    expect(payload).toEqual({ ok: false, error: "Unauthorized." });
   });
 
   it("When an admin exports engineers, then CSV content is returned", async () => {

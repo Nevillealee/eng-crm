@@ -1,6 +1,12 @@
-const allowedAvatarMimeTypes = new Set(["image/png", "image/jpeg", "image/webp"]);
-const maxAvatarBytes = 2 * 1024 * 1024;
-const base64Pattern = /^[A-Za-z0-9+/]+={0,2}$/;
+import {
+  ALLOWED_AVATAR_MIME_TYPES,
+  AVATAR_MAX_BYTES,
+  AVATAR_INVALID_ERROR,
+  AVATAR_TOO_LARGE_ERROR,
+  AVATAR_TYPE_INVALID_ERROR,
+  BASE64_CONTENT_PATTERN,
+} from "../../constants/avatar";
+import { PROFILE_HOLIDAY_LABEL_MAX_LENGTH } from "../../constants/text-limits";
 
 export const allowedAvailability = new Set([
   "available",
@@ -52,7 +58,7 @@ export function parseHolidays(value) {
     }
 
     parsed.push({
-      label: label.slice(0, 120),
+      label: label.slice(0, PROFILE_HOLIDAY_LABEL_MAX_LENGTH),
       startDate,
       endDate,
     });
@@ -62,7 +68,11 @@ export function parseHolidays(value) {
 }
 
 export function toAvatarDataUrl(avatar, avatarMimeType) {
-  if (!avatar || typeof avatarMimeType !== "string" || !allowedAvatarMimeTypes.has(avatarMimeType)) {
+  if (
+    !avatar ||
+    typeof avatarMimeType !== "string" ||
+    !ALLOWED_AVATAR_MIME_TYPES.has(avatarMimeType)
+  ) {
     return null;
   }
   const avatarBuffer =
@@ -92,26 +102,26 @@ export function parseAvatarUpdate(avatar, avatarType) {
   }
 
   if (typeof avatar !== "string") {
-    return { error: "Avatar image is invalid." };
+    return { error: AVATAR_INVALID_ERROR };
   }
 
   const normalizedAvatar = avatar.trim();
-  if (!normalizedAvatar || !base64Pattern.test(normalizedAvatar)) {
-    return { error: "Avatar image is invalid." };
+  if (!normalizedAvatar || !BASE64_CONTENT_PATTERN.test(normalizedAvatar)) {
+    return { error: AVATAR_INVALID_ERROR };
   }
 
-  if (typeof avatarType !== "string" || !allowedAvatarMimeTypes.has(avatarType)) {
-    return { error: "Avatar type is invalid." };
+  if (typeof avatarType !== "string" || !ALLOWED_AVATAR_MIME_TYPES.has(avatarType)) {
+    return { error: AVATAR_TYPE_INVALID_ERROR };
   }
 
   const estimatedBytes = estimateBase64ByteLength(normalizedAvatar);
-  if (!estimatedBytes || estimatedBytes > maxAvatarBytes) {
-    return { error: "Avatar must be 2MB or smaller." };
+  if (!estimatedBytes || estimatedBytes > AVATAR_MAX_BYTES) {
+    return { error: AVATAR_TOO_LARGE_ERROR };
   }
 
   const avatarBuffer = Buffer.from(normalizedAvatar, "base64");
-  if (!avatarBuffer.length || avatarBuffer.length > maxAvatarBytes) {
-    return { error: "Avatar must be 2MB or smaller." };
+  if (!avatarBuffer.length || avatarBuffer.length > AVATAR_MAX_BYTES) {
+    return { error: AVATAR_TOO_LARGE_ERROR };
   }
 
   return { hasAvatarUpdate: true, avatarBuffer, avatarMimeType: avatarType };

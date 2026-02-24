@@ -13,15 +13,15 @@ export function isEndDateBeforeStartDate(startDate, endDate) {
 export function buildProjectChanges({
   previousProject,
   updatedProject,
-  name,
-  clientName,
-  status,
-  costPhp,
-  currencyCode,
-  startDate,
-  endDate,
-  adminNotes,
-  validEngineerIds,
+  hasName,
+  hasClientName,
+  hasStatus,
+  hasCostPhp,
+  hasCurrencyCode,
+  hasStartDate,
+  hasEndDate,
+  hasAdminNotes,
+  hasTeamMemberIds,
 }) {
   const previousTeamMemberIds = sortedIds(
     (previousProject.memberships || []).map((membership) => membership.userId)
@@ -31,60 +31,45 @@ export function buildProjectChanges({
   );
   const changes = {};
 
-  if (typeof name !== "undefined" && previousProject.name !== updatedProject.name) {
+  if (hasName && previousProject.name !== updatedProject.name) {
     changes.name = { before: previousProject.name, after: updatedProject.name };
   }
 
-  if (typeof clientName !== "undefined" && previousProject.clientName !== updatedProject.clientName) {
+  if (hasClientName && previousProject.clientName !== updatedProject.clientName) {
     changes.clientName = { before: previousProject.clientName, after: updatedProject.clientName };
   }
 
-  if (typeof status !== "undefined" && previousProject.status !== updatedProject.status) {
+  if (hasStatus && previousProject.status !== updatedProject.status) {
     changes.status = { before: previousProject.status, after: updatedProject.status };
   }
 
-  if (typeof costPhp !== "undefined" && previousProject.costPhp !== updatedProject.costPhp) {
+  if (hasCostPhp && previousProject.costPhp !== updatedProject.costPhp) {
     changes.costPhp = { before: previousProject.costPhp, after: updatedProject.costPhp };
   }
 
-  if (
-    typeof currencyCode !== "undefined" &&
-    previousProject.currencyCode !== updatedProject.currencyCode
-  ) {
+  if (hasCurrencyCode && previousProject.currencyCode !== updatedProject.currencyCode) {
     changes.currencyCode = {
       before: previousProject.currencyCode,
       after: updatedProject.currencyCode,
     };
   }
 
-  if (
-    typeof startDate !== "undefined" &&
-    previousProject.startDate?.getTime() !== updatedProject.startDate?.getTime()
-  ) {
+  if (hasStartDate && previousProject.startDate?.getTime() !== updatedProject.startDate?.getTime()) {
     changes.startDate = { before: previousProject.startDate, after: updatedProject.startDate };
   }
 
-  if (
-    typeof endDate !== "undefined" &&
-    (previousProject.endDate?.getTime() || null) !== (updatedProject.endDate?.getTime() || null)
-  ) {
+  if (hasEndDate && (previousProject.endDate?.getTime() || null) !== (updatedProject.endDate?.getTime() || null)) {
     changes.endDate = { before: previousProject.endDate, after: updatedProject.endDate };
   }
 
-  if (
-    typeof adminNotes !== "undefined" &&
-    (previousProject.adminNotes || null) !== (updatedProject.adminNotes || null)
-  ) {
+  if (hasAdminNotes && (previousProject.adminNotes || null) !== (updatedProject.adminNotes || null)) {
     changes.adminNotes = {
       before: previousProject.adminNotes || null,
       after: updatedProject.adminNotes || null,
     };
   }
 
-  if (
-    typeof validEngineerIds !== "undefined" &&
-    JSON.stringify(previousTeamMemberIds) !== JSON.stringify(updatedTeamMemberIds)
-  ) {
+  if (hasTeamMemberIds && JSON.stringify(previousTeamMemberIds) !== JSON.stringify(updatedTeamMemberIds)) {
     changes.teamMemberIds = {
       before: previousTeamMemberIds,
       after: updatedTeamMemberIds,

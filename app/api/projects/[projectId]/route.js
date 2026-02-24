@@ -62,7 +62,7 @@ export async function PATCH(request, { params }) {
     }
 
     const validEngineerIds =
-      typeof patchInput.teamMemberIds === "undefined"
+      !patchInput.hasTeamMemberIds
         ? undefined
         : (
             await prisma.user.findMany({
@@ -77,7 +77,7 @@ export async function PATCH(request, { params }) {
         data: toProjectUpdateData(patchInput),
       });
 
-      if (typeof validEngineerIds !== "undefined") {
+      if (patchInput.hasTeamMemberIds) {
         await tx.projectMembership.deleteMany({
           where: { projectId },
         });
@@ -99,15 +99,15 @@ export async function PATCH(request, { params }) {
     const changes = buildProjectChanges({
       previousProject,
       updatedProject: updated,
-      name: patchInput.name,
-      clientName: patchInput.clientName,
-      status: patchInput.status,
-      costPhp: patchInput.costPhp,
-      currencyCode: patchInput.currencyCode,
-      startDate: patchInput.startDate,
-      endDate: patchInput.endDate,
-      adminNotes: patchInput.adminNotes,
-      validEngineerIds,
+      hasName: patchInput.hasName,
+      hasClientName: patchInput.hasClientName,
+      hasStatus: patchInput.hasStatus,
+      hasCostPhp: patchInput.hasCostPhp,
+      hasCurrencyCode: patchInput.hasCurrencyCode,
+      hasStartDate: patchInput.hasStartDate,
+      hasEndDate: patchInput.hasEndDate,
+      hasAdminNotes: patchInput.hasAdminNotes,
+      hasTeamMemberIds: patchInput.hasTeamMemberIds,
     });
 
     if (Object.keys(changes).length > 0) {

@@ -1,55 +1,66 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Box, Button, Container, Paper, Stack, Typography } from "@mui/material";
 
+function resolveVerificationParams() {
+  if (typeof window === "undefined") {
+    return { verificationParams: null, hasSensitiveUrlParams: false };
+  }
+
+  const queryParams = new URLSearchParams(window.location.search);
+  const queryToken = queryParams.get("token") || "";
+  const queryEmail = queryParams.get("email") || "";
+
+  let hashToken = "";
+  let hashEmail = "";
+  const fragment = window.location.hash.startsWith("#")
+    ? window.location.hash.slice(1)
+    : "";
+  if (fragment) {
+    const fragmentParams = new URLSearchParams(fragment);
+    hashToken = fragmentParams.get("token") || "";
+    hashEmail = fragmentParams.get("email") || "";
+  }
+
+  const token = hashToken || queryToken;
+  const email = (hashEmail || queryEmail).trim().toLowerCase();
+  const verificationParams = token ? (email ? { token, email } : { token }) : null;
+
+  return {
+    verificationParams,
+    hasSensitiveUrlParams: Boolean(token || email),
+  };
+}
+
 function VerifyEmailContent() {
-  const [status, setStatus] = useState("loading");
-  const [message, setMessage] = useState("Verifying your email...");
-  const [verificationParams, setVerificationParams] = useState(undefined);
+  const { verificationParams, hasSensitiveUrlParams } = useMemo(
+    () => resolveVerificationParams(),
+    []
+  );
+  const [status, setStatus] = useState(verificationParams ? "loading" : "error");
+  const [message, setMessage] = useState(
+    verificationParams
+      ? "Verifying your email..."
+      : "Missing verification details. Please check your email link."
+  );
 
   useEffect(() => {
-    if (typeof window === "undefined") {
+    if (!hasSensitiveUrlParams) {
       return;
     }
 
-    const queryParams = new URLSearchParams(window.location.search);
-    const queryToken = queryParams.get("token") || "";
-    const queryEmail = queryParams.get("email") || "";
-
-    let hashToken = "";
-    let hashEmail = "";
-    const fragment = window.location.hash.startsWith("#")
-      ? window.location.hash.slice(1)
-      : "";
-    if (fragment) {
-      const fragmentParams = new URLSearchParams(fragment);
-      hashToken = fragmentParams.get("token") || "";
-      hashEmail = fragmentParams.get("email") || "";
-    }
-
-    const token = hashToken || queryToken;
-    const email = (hashEmail || queryEmail).trim().toLowerCase();
-
-    if (token || email) {
-      // Remove sensitive token material from browser URL/history.
-      window.history.replaceState(null, "", window.location.pathname);
-    }
-
-    setVerificationParams(token ? { token, email: email || undefined } : null);
-  }, []);
+    // Remove sensitive token material from browser URL/history.
+    window.history.replaceState(null, "", window.location.pathname);
+  }, [hasSensitiveUrlParams]);
 
   useEffect(() => {
-    if (typeof verificationParams === "undefined") {
-      return;
-    }
-
     if (!verificationParams) {
-      setStatus("error");
-      setMessage("Missing verification details. Please check your email link.");
       return;
     }
+
+    let isMounted = true;
 
     const verify = async () => {
       try {
@@ -60,19 +71,28 @@ function VerifyEmailContent() {
         });
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) {
-          setStatus("error");
-          setMessage(payload?.error || "Unable to verify email.");
+          if (isMounted) {
+            setStatus("error");
+            setMessage(payload?.error || "Unable to verify email.");
+          }
           return;
         }
-        setStatus("success");
-        setMessage("Your email has been verified. You can now sign in.");
+        if (isMounted) {
+          setStatus("success");
+          setMessage("Your email has been verified. You can now sign in.");
+        }
       } catch {
-        setStatus("error");
-        setMessage("Unable to verify email.");
+        if (isMounted) {
+          setStatus("error");
+          setMessage("Unable to verify email.");
+        }
       }
     };
 
     verify();
+    return () => {
+      isMounted = false;
+    };
   }, [verificationParams]);
 
   return (

@@ -17,6 +17,12 @@ export const projectMembershipInclude = {
   },
 };
 
+/**
+ * Parses a date-like input into a Date instance.
+ *
+ * @param {unknown} value
+ * @returns {Date | null}
+ */
 export function parseDateInput(value) {
   if (typeof value !== "string") {
     return null;
@@ -30,6 +36,12 @@ export function parseDateInput(value) {
   return parsed;
 }
 
+/**
+ * Normalizes project membership rows into API team-member DTOs.
+ *
+ * @param {Array<{ user: { id: string, email: string, firstName?: string | null, lastName?: string | null, name?: string | null } }>} memberships
+ * @returns {Array<{ id: string, firstName: string, lastName: string, name: string, email: string }>}
+ */
 export function formatTeamMembers(memberships) {
   return memberships.map((membership) => ({
     id: membership.user.id,
@@ -43,6 +55,13 @@ export function formatTeamMembers(memberships) {
   }));
 }
 
+/**
+ * Converts a project record into the API response shape.
+ *
+ * @param {object} project
+ * @param {boolean} [includeAdminNotes=false]
+ * @returns {object}
+ */
 export function toProjectDto(project, includeAdminNotes = false) {
   return {
     id: project.id,
@@ -58,6 +77,12 @@ export function toProjectDto(project, includeAdminNotes = false) {
   };
 }
 
+/**
+ * Sanitizes incoming team member IDs for project assignment.
+ *
+ * @param {unknown} value
+ * @returns {string[]}
+ */
 export function parseTeamMemberIds(value) {
   if (!Array.isArray(value)) {
     return [];
@@ -66,6 +91,12 @@ export function parseTeamMemberIds(value) {
   return [...new Set(value.filter((item) => typeof item === "string"))].slice(0, 50);
 }
 
+/**
+ * Parses project cost input as a non-negative whole number.
+ *
+ * @param {unknown} value
+ * @returns {number | null}
+ */
 export function parseCostPhpInput(value) {
   if (typeof value === "number" && Number.isInteger(value) && value >= 0) {
     return value;
@@ -92,6 +123,13 @@ export function parseCostPhpInput(value) {
   return parsed;
 }
 
+/**
+ * Parses and validates a project currency code.
+ *
+ * @param {unknown} value
+ * @param {Set<string>} allowedCurrencyCodes
+ * @returns {string | null}
+ */
 export function parseCurrencyCodeInput(value, allowedCurrencyCodes) {
   if (typeof value !== "string") {
     return null;
@@ -105,6 +143,12 @@ export function parseCurrencyCodeInput(value, allowedCurrencyCodes) {
   return code;
 }
 
+/**
+ * Detects Prisma "record not found" errors in route handlers.
+ *
+ * @param {unknown} error
+ * @returns {boolean}
+ */
 export function isPrismaNotFoundError(error) {
   return typeof error === "object" && error !== null && error.code === "P2025";
 }

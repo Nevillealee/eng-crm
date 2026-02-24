@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import prisma from "../../../lib/prisma";
+import {
+  PASSWORD_MAX_BYTES,
+  PASSWORD_MAX_BYTES_ERROR,
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_MIN_LENGTH_ERROR,
+} from "../../constants/password-policy";
 
 const INVALID_TOKEN_RESPONSE = NextResponse.json(
   { ok: false, error: "Invalid or expired reset token." },
@@ -17,17 +23,17 @@ export async function POST(request) {
     return NextResponse.json({ ok: false, error: "Missing required fields." }, { status: 400 });
   }
 
-  if (password.length < 8) {
+  if (password.length < PASSWORD_MIN_LENGTH) {
     return NextResponse.json(
-      { ok: false, error: "Password must be at least 8 characters." },
+      { ok: false, error: PASSWORD_MIN_LENGTH_ERROR },
       { status: 400 }
     );
   }
 
-  // Prevent bcrypt DoS — bcrypt silently truncates at 72 bytes; we cap at 32.
-  if (Buffer.byteLength(password, "utf8") > 32) {
+  // Prevent bcrypt DoS — bcrypt silently truncates at 72 bytes; we cap at PASSWORD_MAX_BYTES.
+  if (Buffer.byteLength(password, "utf8") > PASSWORD_MAX_BYTES) {
     return NextResponse.json(
-      { ok: false, error: "Password must be 32 characters or fewer." },
+      { ok: false, error: PASSWORD_MAX_BYTES_ERROR },
       { status: 400 }
     );
   }

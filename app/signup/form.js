@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Alert, Avatar, Box, Button, Stack, TextField, Typography } from "@mui/material";
+import { PASSWORD_MAX_BYTES } from "../constants/password-policy";
 
 const placeholderAvatar = "/images/nonbinary-avatar.svg";
 
@@ -79,7 +80,7 @@ export default function SignupForm({
             onBlur={onFieldBlur}
             error={!!fieldErrors.password}
             helperText={fieldErrors.password || ""}
-            slotProps={{ htmlInput: { maxLength: 32 } }}
+            slotProps={{ htmlInput: { maxLength: PASSWORD_MAX_BYTES } }}
             required
             fullWidth
           />
@@ -92,7 +93,7 @@ export default function SignupForm({
             onBlur={onFieldBlur}
             error={!!fieldErrors.confirmPassword}
             helperText={fieldErrors.confirmPassword || ""}
-            slotProps={{ htmlInput: { maxLength: 32 } }}
+            slotProps={{ htmlInput: { maxLength: PASSWORD_MAX_BYTES } }}
             required
             fullWidth
           />

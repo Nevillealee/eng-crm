@@ -133,6 +133,33 @@ describe("signup API integration flow", () => {
     expect(payload.error).toBeDefined();
     expect(prismaMock.user.create).not.toHaveBeenCalled();
   });
+
+  it("returns server error when verification email delivery fails", async () => {
+    prismaMock.user.findUnique.mockResolvedValue(null);
+    prismaMock.user.create.mockResolvedValue({
+      id: "user-5",
+      firstName: "Failure",
+      name: "Failure Case",
+      email: "failure@example.com",
+    });
+    sendVerificationEmailMock.mockRejectedValue(new Error("smtp failed"));
+
+    const response = await POST(
+      jsonRequest("http://localhost/api/signup", "POST", {
+        firstName: "Failure",
+        lastName: "Case",
+        email: "failure@example.com",
+        password: "password123",
+        confirmPassword: "password123",
+      })
+    );
+    const payload = await readJson(response);
+
+    expect(response.status).toBe(500);
+    expect(payload).toEqual({
+      error: "Sign-up is temporarily unavailable. Please try again in a few minutes.",
+    });
+  });
 });
 
 describe("resend verification API integration flow", () => {
@@ -215,6 +242,29 @@ describe("resend verification API integration flow", () => {
       verificationUrl: "http://localhost:3000/verify-email#token=resend",
     });
   });
+
+  it("returns server error when resend verification email delivery fails", async () => {
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: "user-9",
+      emailVerified: null,
+      firstName: "Retry",
+      name: "Retry User",
+    });
+    sendVerificationEmailMock.mockRejectedValue(new Error("smtp failed"));
+
+    const response = await POST(
+      jsonRequest("http://localhost/api/resend-verification", "POST", {
+        email: "retry@example.com",
+      })
+    );
+    const payload = await readJson(response);
+
+    expect(response.status).toBe(500);
+    expect(payload).toEqual({
+      ok: false,
+      error: "Unable to resend verification email right now. Please try again later.",
+    });
+  });
 });
 
 describe("forgot password API integration flow", () => {
@@ -285,6 +335,30 @@ describe("forgot password API integration flow", () => {
       to: "sam@example.com",
       name: "Sam",
       resetUrl: expect.stringContaining("/reset-password?token="),
+    });
+  });
+
+  it("returns server error when forgot-password email delivery fails", async () => {
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: "user-10",
+      email: "mailfail@example.com",
+      firstName: "Mail",
+      name: "Mail Failure",
+    });
+    prismaMock.user.update.mockResolvedValue({ id: "user-10" });
+    sendForgotPasswordEmailMock.mockRejectedValue(new Error("smtp failed"));
+
+    const response = await POST(
+      jsonRequest("http://localhost/api/forgot-password", "POST", {
+        email: "mailfail@example.com",
+      })
+    );
+    const payload = await readJson(response);
+
+    expect(response.status).toBe(500);
+    expect(payload).toEqual({
+      ok: false,
+      error: "Unable to process forgot password request right now. Please try again later.",
     });
   });
 });

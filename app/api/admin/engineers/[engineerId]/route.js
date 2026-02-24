@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "../../../../../auth";
 import prisma from "../../../../../lib/prisma";
 import { recordAdminAudit } from "../../../../../lib/admin-audit";
+import { ENGINEER_SALARY_NOTES_MAX_LENGTH } from "../../../../constants/text-limits";
 
 function parseMonthlySalaryPhp(value) {
   if (value === null || value === "") {
@@ -49,14 +50,22 @@ export async function PATCH(request, { params }) {
   }
 
   const body = await request.json().catch(() => ({}));
-  const hasMonthlySalaryPhp = Object.prototype.hasOwnProperty.call(body || {}, "monthlySalaryPhp");
+  const input = body && typeof body === "object" ? body : {};
+  const hasMonthlySalaryPhp = Object.prototype.hasOwnProperty.call(input, "monthlySalaryPhp");
+  const hasSalaryNotes = typeof input.salaryNotes === "string";
   const monthlySalaryPhp = hasMonthlySalaryPhp
-    ? parseMonthlySalaryPhp(body?.monthlySalaryPhp)
+    ? parseMonthlySalaryPhp(input.monthlySalaryPhp)
     : undefined;
-  const salaryNotes =
-    typeof body?.salaryNotes === "string" ? body.salaryNotes.trim().slice(0, 1000) : undefined;
+  const salaryNotes = hasSalaryNotes
+    ? input.salaryNotes.trim().slice(0, ENGINEER_SALARY_NOTES_MAX_LENGTH)
+    : undefined;
 
-  if (hasMonthlySalaryPhp && monthlySalaryPhp === null && body?.monthlySalaryPhp !== null && body?.monthlySalaryPhp !== "") {
+  if (
+    hasMonthlySalaryPhp &&
+    monthlySalaryPhp === null &&
+    input.monthlySalaryPhp !== null &&
+    input.monthlySalaryPhp !== ""
+  ) {
     return NextResponse.json(
       { ok: false, error: "Monthly salary must be a non-negative whole number." },
       { status: 400 }
@@ -80,7 +89,7 @@ export async function PATCH(request, { params }) {
 
   const updateData = {
     monthlySalaryPhp,
-    salaryNotes: typeof salaryNotes === "undefined" ? undefined : salaryNotes || null,
+    salaryNotes: hasSalaryNotes ? salaryNotes || null : undefined,
   };
 
   const engineer = await prisma.user.update({

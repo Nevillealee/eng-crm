@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import { auth } from "../../../../../auth";
 import prisma from "../../../../../lib/prisma";
 import { toCsvContent } from "../../../../../lib/csv";
@@ -33,7 +34,7 @@ export async function GET() {
     const session = await auth();
 
     if (!session?.user?.id || session.user.role !== "admin") {
-      return new Response("Unauthorized", { status: 401 });
+      return NextResponse.json({ ok: false, error: "Unauthorized." }, { status: 401 });
     }
 
     const engineers = await prisma.user.findMany({
@@ -106,7 +107,7 @@ export async function GET() {
     const content = toCsvContent(headers, rows);
     const filename = `engineers-${new Date().toISOString().slice(0, 10)}.csv`;
 
-    return new Response(content, {
+    return new NextResponse(content, {
       status: 200,
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
@@ -116,8 +117,9 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Engineer export failed.", error);
-    return new Response("Export is temporarily unavailable. Please try again later.", {
-      status: 500,
-    });
+    return NextResponse.json(
+      { ok: false, error: "Export is temporarily unavailable. Please try again later." },
+      { status: 500 }
+    );
   }
 }

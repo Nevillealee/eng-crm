@@ -13,6 +13,11 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import {
+  PASSWORD_MAX_BYTES,
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_MIN_LENGTH_ERROR,
+} from "../constants/password-policy";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -27,11 +32,11 @@ export default function ResetPasswordPage() {
   const validateField = (name, value, currentPassword) => {
     if (name === "password") {
       if (!value) return "Password is required.";
-      if (value.length < 8) return "Password must be at least 8 characters.";
+      if (value.length < PASSWORD_MIN_LENGTH) return PASSWORD_MIN_LENGTH_ERROR;
       return "";
     }
     if (name === "confirmPassword") {
-      const pw = currentPassword !== undefined ? currentPassword : password;
+      const pw = currentPassword ?? password;
       return value === pw ? "" : "Passwords do not match.";
     }
     return "";
@@ -124,7 +129,7 @@ export default function ResetPasswordPage() {
                   error={!!fieldErrors.password}
                   helperText={fieldErrors.password || ""}
                   autoComplete="new-password"
-                  slotProps={{ htmlInput: { maxLength: 32 } }}
+                  slotProps={{ htmlInput: { maxLength: PASSWORD_MAX_BYTES } }}
                   required
                   fullWidth
                 />
@@ -140,7 +145,7 @@ export default function ResetPasswordPage() {
                   error={!!fieldErrors.confirmPassword}
                   helperText={fieldErrors.confirmPassword || ""}
                   autoComplete="new-password"
-                  slotProps={{ htmlInput: { maxLength: 32 } }}
+                  slotProps={{ htmlInput: { maxLength: PASSWORD_MAX_BYTES } }}
                   required
                   fullWidth
                 />

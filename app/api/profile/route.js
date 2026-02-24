@@ -67,7 +67,12 @@ export async function PATCH(request) {
     }
 
     const derivedCity = deriveCityFromIp(request);
-    const city = deriveUpdatedCity(patchInput.cityInput, derivedCity, previous.city);
+    const city = deriveUpdatedCity(
+      patchInput.hasCityUpdate,
+      patchInput.cityInput,
+      derivedCity,
+      previous.city
+    );
 
     const updated = await prisma.user.update({
       where: { id: session.user.id },
@@ -80,7 +85,7 @@ export async function PATCH(request) {
         onboardingCompleted: patchInput.hasOnboardingCompletedUpdate
           ? patchInput.onboardingCompleted
           : undefined,
-        onboardingStep: patchInput.requestedOnboardingStep || undefined,
+        onboardingStep: patchInput.requestedOnboardingStep ?? undefined,
         avatar: patchInput.avatarUpdate.hasAvatarUpdate
           ? patchInput.avatarUpdate.avatarBuffer
           : undefined,

@@ -245,10 +245,13 @@ describe("Given graceful API error handling", () => {
 
     const { GET } = await import("../../../app/api/admin/export/engineers/route.js");
     const response = await GET();
-    const text = await response.text();
+    const payload = await readJson(response);
 
     expect(response.status).toBe(500);
-    expect(text).toBe("Export is temporarily unavailable. Please try again later.");
+    expect(payload).toEqual({
+      ok: false,
+      error: "Export is temporarily unavailable. Please try again later.",
+    });
   });
 
   it("When project CSV export throws, then GET /api/admin/export/projects returns a safe server error", async () => {
@@ -268,10 +271,13 @@ describe("Given graceful API error handling", () => {
 
     const { GET } = await import("../../../app/api/admin/export/projects/route.js");
     const response = await GET();
-    const text = await response.text();
+    const payload = await readJson(response);
 
     expect(response.status).toBe(500);
-    expect(text).toBe("Export is temporarily unavailable. Please try again later.");
+    expect(payload).toEqual({
+      ok: false,
+      error: "Export is temporarily unavailable. Please try again later.",
+    });
   });
 
   it("When profile loading throws, then GET /api/profile returns a safe server error", async () => {

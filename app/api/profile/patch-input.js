@@ -1,18 +1,27 @@
 import { allowedAvailability, maxOnboardingStep, parseAvatarUpdate, parseHolidays, parseSkills } from "./shared";
+import {
+  PROFILE_AVAILABILITY_NOTE_MAX_LENGTH,
+  PROFILE_CITY_MAX_LENGTH,
+} from "../../constants/text-limits";
 
 export function parseProfilePatchInput(body) {
-  const hasCityUpdate = typeof body?.city === "string";
-  const cityInput = hasCityUpdate ? body.city.trim().slice(0, 120) : undefined;
-  const skills = parseSkills(body?.skills);
+  const source = body && typeof body === "object" ? body : {};
+  const hasCityUpdate = typeof source.city === "string";
+  const cityInput = hasCityUpdate
+    ? source.city.trim().slice(0, PROFILE_CITY_MAX_LENGTH)
+    : undefined;
+  const skills = parseSkills(source.skills);
   const availabilityStatus =
-    typeof body?.availabilityStatus === "string" ? body.availabilityStatus : null;
+    typeof source.availabilityStatus === "string" ? source.availabilityStatus : null;
   const availabilityNote =
-    typeof body?.availabilityNote === "string" ? body.availabilityNote.trim().slice(0, 500) : null;
-  const upcomingHolidays = parseHolidays(body?.upcomingHolidays);
-  const hasOnboardingCompletedUpdate = typeof body?.onboardingCompleted === "boolean";
-  const onboardingCompleted = hasOnboardingCompletedUpdate ? body.onboardingCompleted : undefined;
-  const requestedOnboardingStep = Number.isInteger(body?.onboardingStep) ? body.onboardingStep : null;
-  const avatarUpdate = parseAvatarUpdate(body?.avatar, body?.avatarType);
+    typeof source.availabilityNote === "string"
+      ? source.availabilityNote.trim().slice(0, PROFILE_AVAILABILITY_NOTE_MAX_LENGTH)
+      : null;
+  const upcomingHolidays = parseHolidays(source.upcomingHolidays);
+  const hasOnboardingCompletedUpdate = typeof source.onboardingCompleted === "boolean";
+  const onboardingCompleted = hasOnboardingCompletedUpdate ? source.onboardingCompleted : undefined;
+  const requestedOnboardingStep = Number.isInteger(source.onboardingStep) ? source.onboardingStep : null;
+  const avatarUpdate = parseAvatarUpdate(source.avatar, source.avatarType);
 
   return {
     hasCityUpdate,
@@ -62,8 +71,8 @@ export function getProfilePatchValidationError({
   return avatarUpdate.error || "";
 }
 
-export function deriveUpdatedCity(cityInput, derivedCity, previousCity) {
-  if (typeof cityInput !== "undefined") {
+export function deriveUpdatedCity(hasCityUpdate, cityInput, derivedCity, previousCity) {
+  if (hasCityUpdate) {
     return cityInput || null;
   }
 
