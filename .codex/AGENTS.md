@@ -66,7 +66,7 @@ Required env vars (see `.env` or hosting dashboard): `POSTGRES_URL` (or `POSTGRE
 - **ES Modules** — use `import`/`export` for maintainability; use dynamic `import()` for on-demand loading where it materially improves performance.
 - **Performance guardrails** — debounce/throttle heavy event handlers (scroll/resize/input) and memoize expensive repeated computations.
 - **Error handling** — use `try...catch` around async/await failure boundaries and return meaningful, user-safe error messages.
-- **Testing expectations** — every new feature must include a test added in the same change, preferably an integration test. If the change is strictly unit-level/internal and does not introduce new user-facing behavior, a new test is optional.
+- **Testing expectations** — Always use red/green TDD. every new feature must include a test added in the same change, preferably an integration test. If the change is strictly unit-level/internal and does not introduce new user-facing behavior, a new test is optional.
 - **Tooling** — keep ESLint clean and maintain Prettier-compatible formatting.
 
 ## Database
