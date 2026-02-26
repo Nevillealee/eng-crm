@@ -14,6 +14,16 @@ import {
 import { FormDateField, FormTextField } from "../form-fields";
 import { availabilityOptions, engineerSkillOptions } from "../profile-form-shared";
 
+const holidayLabelFieldSx = {
+  flex: { md: "1 1 200px" },
+  minWidth: { md: 160 },
+  maxWidth: { md: 220 },
+};
+const holidayDateFieldSx = {
+  flex: { md: "0 1 180px" },
+  minWidth: { md: 170 },
+};
+
 export default function OnboardingStepContent({
   step,
   form,
@@ -105,18 +115,21 @@ export default function OnboardingStepContent({
             value={holiday.label}
             onChange={(event) => onHolidayChange(index, "label", event.target.value)}
             disabled={loading || saving}
+            sx={holidayLabelFieldSx}
           />
           <FormDateField
             label="Start date"
             value={holiday.startDate}
             onChange={(event) => onHolidayChange(index, "startDate", event.target.value)}
             disabled={loading || saving}
+            sx={holidayDateFieldSx}
           />
           <FormDateField
             label="End date"
             value={holiday.endDate}
             onChange={(event) => onHolidayChange(index, "endDate", event.target.value)}
             disabled={loading || saving}
+            sx={holidayDateFieldSx}
           />
           <IconButton
             aria-label="Remove holiday"

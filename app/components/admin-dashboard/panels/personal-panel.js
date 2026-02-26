@@ -17,6 +17,15 @@ import CloudinaryAvatarUploadButton from "../../cloudinary-avatar-upload-button"
 import { availabilityOptions } from "../shared/constants";
 
 const placeholderAvatar = "/images/nonbinary-avatar.svg";
+const holidayLabelFieldSx = {
+  flex: { md: "1 1 200px" },
+  minWidth: { md: 160 },
+  maxWidth: { md: 220 },
+};
+const holidayDateFieldSx = {
+  flex: { md: "0 1 180px" },
+  minWidth: { md: 170 },
+};
 
 export default function PersonalPanel({
   session,
@@ -116,18 +125,21 @@ export default function PersonalPanel({
                     value={holiday.label}
                     onChange={(event) => onHolidayChange(index, "label", event.target.value)}
                     disabled={loading || profileSaving}
+                    sx={holidayLabelFieldSx}
                   />
                   <FormDateField
                     label="Start date"
                     value={holiday.startDate}
                     onChange={(event) => onHolidayChange(index, "startDate", event.target.value)}
                     disabled={loading || profileSaving}
+                    sx={holidayDateFieldSx}
                   />
                   <FormDateField
                     label="End date"
                     value={holiday.endDate}
                     onChange={(event) => onHolidayChange(index, "endDate", event.target.value)}
                     disabled={loading || profileSaving}
+                    sx={holidayDateFieldSx}
                   />
                   <IconButton
                     aria-label="Remove holiday"
