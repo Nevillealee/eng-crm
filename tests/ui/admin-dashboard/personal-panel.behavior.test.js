@@ -1,4 +1,6 @@
 const PersonalPanel = require("../../../app/components/admin-dashboard/panels/personal-panel").default;
+const CloudinaryAvatarUploadButton =
+  require("../../../app/components/cloudinary-avatar-upload-button").default;
 const { findFirstElement, textFromChildren } = require("../../helpers/react-tree");
 
 function buildProps(overrides = {}) {
@@ -13,11 +15,11 @@ function buildProps(overrides = {}) {
       availabilityNote: "",
       upcomingHolidays: [{ label: "Vacation", startDate: "2026-03-01", endDate: "2026-03-03" }],
     },
-    avatarPreview: "data:image/png;base64,avatar",
-    avatarBlob: null,
+    avatarPreview: "https://res.cloudinary.com/demo/image/upload/avatar.png",
     onSavePersonalInfo: jest.fn((event) => event.preventDefault()),
     onProfileFieldChange: jest.fn(),
-    onImageSelection: jest.fn(),
+    onAvatarUpload: jest.fn(),
+    onAvatarUploadError: jest.fn(),
     onAvatarRemove: jest.fn(),
     onProfileSkillsChange: jest.fn(),
     onHolidayChange: jest.fn(),
@@ -56,22 +58,20 @@ describe("Given the personal information panel", () => {
     expect(onRemoveHoliday).toHaveBeenCalledWith(0);
   });
 
-  it("When an avatar file is selected, then the image selection callback is called", () => {
-    const onImageSelection = jest.fn();
-    const tree = PersonalPanel(buildProps({ onImageSelection }));
+  it("When an avatar upload succeeds, then the avatar upload callback is called", () => {
+    const onAvatarUpload = jest.fn();
+    const tree = PersonalPanel(buildProps({ onAvatarUpload }));
 
-    const avatarInput = findFirstElement(
+    const avatarUploader = findFirstElement(
       tree,
-      (element) =>
-        element.type === "input" &&
-        element.props?.type === "file" &&
-        typeof element.props?.onChange === "function"
+      (element) => element.type === CloudinaryAvatarUploadButton
     );
 
-    const event = { target: { files: [{ name: "avatar.png" }] } };
-    avatarInput.props.onChange(event);
+    avatarUploader.props.onUpload("https://res.cloudinary.com/demo/image/upload/avatar.png");
 
-    expect(onImageSelection).toHaveBeenCalledWith(event);
+    expect(onAvatarUpload).toHaveBeenCalledWith(
+      "https://res.cloudinary.com/demo/image/upload/avatar.png"
+    );
   });
 
   it("When remove avatar is clicked, then avatar removal is requested", () => {
@@ -91,7 +91,7 @@ describe("Given the personal information panel", () => {
   });
 
   it("When no avatar exists, then remove avatar is disabled", () => {
-    const tree = PersonalPanel(buildProps({ avatarPreview: "", avatarBlob: null }));
+    const tree = PersonalPanel(buildProps({ avatarPreview: "" }));
 
     const removeAvatarButton = findFirstElement(
       tree,

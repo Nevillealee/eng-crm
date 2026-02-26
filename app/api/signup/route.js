@@ -7,12 +7,9 @@ import {
 } from "../../../lib/email-verification";
 import { sendVerificationEmail } from "../../actions/sendEmail";
 import {
-  ALLOWED_AVATAR_MIME_TYPES,
-  AVATAR_MAX_BYTES,
   AVATAR_INVALID_ERROR,
-  AVATAR_TOO_LARGE_ERROR,
-  AVATAR_TYPE_INVALID_ERROR,
-  BASE64_CONTENT_PATTERN,
+  AVATAR_URL_MAX_LENGTH,
+  AVATAR_URL_TOO_LONG_ERROR,
 } from "../../constants/avatar";
 import {
   PASSWORD_MAX_BYTES,
@@ -25,48 +22,36 @@ function isPrismaUniqueConstraintError(error) {
   return typeof error === "object" && error !== null && error.code === "P2002";
 }
 
-function estimateBase64ByteLength(value) {
-  if (value.length % 4 !== 0) {
-    return null;
-  }
-
-  const paddingLength = value.endsWith("==") ? 2 : value.endsWith("=") ? 1 : 0;
-  return (value.length / 4) * 3 - paddingLength;
-}
-
-function parseSignupAvatar(avatar, avatarType) {
+function parseSignupAvatar(avatar) {
   if (avatar === undefined || avatar === null) {
-    return { avatarBuffer: null, avatarMimeType: null };
+    return { avatarUrl: null };
   }
 
   if (typeof avatar !== "string") {
     return { error: AVATAR_INVALID_ERROR };
   }
 
-  const normalizedAvatar = avatar.trim();
-  if (!normalizedAvatar) {
-    return { avatarBuffer: null, avatarMimeType: null };
+  const trimmedAvatar = avatar.trim();
+  if (!trimmedAvatar) {
+    return { avatarUrl: null };
   }
 
-  if (!BASE64_CONTENT_PATTERN.test(normalizedAvatar)) {
+  if (trimmedAvatar.length > AVATAR_URL_MAX_LENGTH) {
+    return { error: AVATAR_URL_TOO_LONG_ERROR };
+  }
+
+  let parsedAvatarUrl;
+  try {
+    parsedAvatarUrl = new URL(trimmedAvatar);
+  } catch {
     return { error: AVATAR_INVALID_ERROR };
   }
 
-  if (typeof avatarType !== "string" || !ALLOWED_AVATAR_MIME_TYPES.has(avatarType)) {
-    return { error: AVATAR_TYPE_INVALID_ERROR };
+  if (parsedAvatarUrl.protocol !== "https:" && parsedAvatarUrl.protocol !== "http:") {
+    return { error: AVATAR_INVALID_ERROR };
   }
 
-  const estimatedBytes = estimateBase64ByteLength(normalizedAvatar);
-  if (!estimatedBytes || estimatedBytes > AVATAR_MAX_BYTES) {
-    return { error: AVATAR_TOO_LARGE_ERROR };
-  }
-
-  const avatarBuffer = Buffer.from(normalizedAvatar, "base64");
-  if (!avatarBuffer.length || avatarBuffer.length > AVATAR_MAX_BYTES) {
-    return { error: AVATAR_TOO_LARGE_ERROR };
-  }
-
-  return { avatarBuffer, avatarMimeType: avatarType };
+  return { avatarUrl: parsedAvatarUrl.toString() };
 }
 
 async function issueVerificationEmail(email, name) {
@@ -103,7 +88,6 @@ export async function POST(request) {
       password,
       confirmPassword,
       avatar,
-      avatarType,
     } = body || {};
 
     const normalizedFirstName = typeof firstName === "string" ? firstName.trim() : "";
@@ -161,7 +145,7 @@ export async function POST(request) {
     }
 
     const passwordHash = await bcrypt.hash(normalizedPassword, 12);
-    const avatarPayload = parseSignupAvatar(avatar, avatarType);
+    const avatarPayload = parseSignupAvatar(avatar);
     if (avatarPayload.error) {
       return NextResponse.json(
         { error: avatarPayload.error },
@@ -178,8 +162,7 @@ export async function POST(request) {
           name: `${normalizedFirstName} ${normalizedLastName}`.trim(),
           email: normalizedEmail,
           password: passwordHash,
-          avatar: avatarPayload.avatarBuffer,
-          avatarMimeType: avatarPayload.avatarMimeType,
+          image: avatarPayload.avatarUrl,
         },
       });
     } catch (error) {

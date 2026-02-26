@@ -7,6 +7,7 @@ Legend:
 - P1: strongly desired, can slip
 
 ## P0 - Authentication and access control
+Status: Complete (as of February 26, 2026)
 
 - Admin flag:
   - `users.is_admin` defines admin users.
@@ -32,6 +33,7 @@ Legend:
   - 5xx shows generic "temporarily unavailable" message.
 
 ## P0 - Engineer experience
+Status: Complete (as of February 26, 2026)
 
 - Engineer home routing:
   - After login, route to `/engineer` first.
@@ -48,6 +50,7 @@ Legend:
   - Profile updates persist and are visible to admins.
 
 ## P0 - Admin experience
+Status: Complete (as of February 26, 2026)
 
 - Admin dashboard:
   - Quick counts: engineers, projects, engineers available.
@@ -67,6 +70,7 @@ Legend:
   - Implemented in current build via `/api/projects`, `/api/projects/[projectId]`, and `/admin` dashboard workflows.
 
 ## P1 - Quality and operational hardening
+Status: Complete (as of February 26, 2026)
 
 - Audit log (admin edits):
   - Record salary and staffing/project changes (who, what, when).
@@ -78,15 +82,15 @@ Legend:
 ## P2 - Future enhancements
 
 - Avatar cloud storage:
-  - Move avatar hosting from PostgreSQL `Bytes` column to S3 or equivalent cloud blob storage (e.g. AWS S3, Cloudflare R2, Supabase Storage).
+  - Status: Complete (as of February 26, 2026).
+  - Move avatar hosting from PostgreSQL `Bytes` column to S3 or equivalent cloud blob storage (e.g. cloudinary, AWS S3, Cloudflare R2, Supabase Storage).
   - Store a URL reference on the `User` record instead of raw bytes.
   - Update upload (signup, profile) and read paths (admin engineer list, engineer account) accordingly.
+- Mobile UI redesign:
+  - Redesign the site's appearance for mobile screens across authentication, onboarding, engineer, and admin views.
+  - Apply UI/UX best practices for mobile using MUI responsive design patterns (breakpoints, touch targets, spacing, typography scale, and navigation).
+  - Use this guidance as a design reference: https://medium.com/@WebdesignerDepot/essential-tips-for-converting-a-desktop-site-to-mobile-3686c35a7364
 - Admin calendar view:
   - Add a calendar panel to the admin dashboard.
   - Surfaces engineer time-off / upcoming holidays and project start/end dates in a unified calendar.
   - Should support month/week views and be filterable by engineer or project.
-- Migrate off Nextjs to Vite
-  - Evaluate Vite + React + MUI as an alternative to Next.js for improved build times and development experience.
-  - Would require re-implementing routing, API routes, and server-side logic currently handled by Next.js using React router instead.
-  - Remove all nextjs specific code and dependencies, replacing with Vite-compatible alternatives.
-  - Create a new Vite project (parallel or in same repo), install dependencies then port over components, pages, and API route logic iteratively. Use fetch for API calls

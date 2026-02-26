@@ -2,11 +2,12 @@
 const isDevelopment = process.env.NODE_ENV !== "production";
 const contentSecurityPolicy = `
   default-src 'self';
-  script-src 'self' 'unsafe-inline'${isDevelopment ? " 'unsafe-eval'" : ""};
+  script-src 'self' 'unsafe-inline'${isDevelopment ? " 'unsafe-eval'" : ""} https://widget.cloudinary.com https://upload-widget.cloudinary.com;
   style-src 'self' 'unsafe-inline';
-  img-src 'self' data: blob:;
+  img-src 'self' data: blob: https://res.cloudinary.com;
   font-src 'self' data:;
-  connect-src 'self';
+  connect-src 'self' https://api.cloudinary.com https://res.cloudinary.com https://widget.cloudinary.com https://upload-widget.cloudinary.com;
+  frame-src 'self' https://widget.cloudinary.com https://upload-widget.cloudinary.com;
   object-src 'none';
   base-uri 'self';
   form-action 'self';

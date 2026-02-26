@@ -4,8 +4,6 @@ export const profileSelect = {
   firstName: true,
   lastName: true,
   image: true,
-  avatar: true,
-  avatarMimeType: true,
   city: true,
   skills: true,
   availabilityStatus: true,

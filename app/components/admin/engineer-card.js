@@ -88,7 +88,7 @@ export default function EngineerCard({
             alignItems="center"
             sx={{ minWidth: 0, flex: 1 }}
           >
-            <Avatar src={engineer.avatarSrc || engineer.image || undefined}>
+            <Avatar src={engineer.image || undefined}>
               {(engineer.firstName || engineer.email || "U").slice(0, 1).toUpperCase()}
             </Avatar>
             <Stack sx={{ minWidth: 0, flex: 1 }}>

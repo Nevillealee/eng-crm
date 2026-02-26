@@ -1,17 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { signOut } from "next-auth/react";
 import MenuIcon from "@mui/icons-material/Menu";
 import { Alert, Box, Container, IconButton, Paper, Stack, Typography } from "@mui/material";
-import AvatarCropDialog from "../avatar-crop-dialog";
-import {
-  blobToBase64,
-  emptyHoliday,
-  nextDateInputValue,
-  skillOptionSet,
-} from "../profile-form-shared";
-import getCroppedImage from "../../signup/crop-image";
+import { emptyHoliday, nextDateInputValue, skillOptionSet } from "../profile-form-shared";
 import AuditPanel from "./panels/audit-panel";
 import DashboardPanel from "./panels/dashboard-panel";
 import EngineersPanel from "./panels/engineers-panel";
@@ -101,23 +94,9 @@ export default function AdminDashboard({ session }) {
     availabilityNote: "",
     upcomingHolidays: [emptyHoliday()],
   });
-  const [cropDialogOpen, setCropDialogOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState("");
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
-  const [avatarBlob, setAvatarBlob] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState("");
-  const [avatarType, setAvatarType] = useState("");
+  const [avatarDirty, setAvatarDirty] = useState(false);
   const [avatarRemoved, setAvatarRemoved] = useState(false);
-  const avatarPreviewObjectUrlRef = useRef(null);
-
-  const revokeAvatarPreviewObjectUrl = () => {
-    if (avatarPreviewObjectUrlRef.current) {
-      URL.revokeObjectURL(avatarPreviewObjectUrlRef.current);
-      avatarPreviewObjectUrlRef.current = null;
-    }
-  };
 
   const availableEngineerCount = useMemo(
     () => engineers.filter((item) => item.availabilityStatus === "available").length,
@@ -262,13 +241,8 @@ export default function AdminDashboard({ session }) {
           availabilityNote: profile.availabilityNote || "",
           upcomingHolidays: holidays.length ? holidays : [emptyHoliday()],
         });
-        if (avatarPreviewObjectUrlRef.current) {
-          URL.revokeObjectURL(avatarPreviewObjectUrlRef.current);
-          avatarPreviewObjectUrlRef.current = null;
-        }
         setAvatarPreview(typeof profile.image === "string" ? profile.image : "");
-        setAvatarBlob(null);
-        setAvatarType("");
+        setAvatarDirty(false);
         setAvatarRemoved(false);
       } catch (loadError) {
         if (mounted) {
@@ -285,15 +259,6 @@ export default function AdminDashboard({ session }) {
 
     return () => {
       mounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (avatarPreviewObjectUrlRef.current) {
-        URL.revokeObjectURL(avatarPreviewObjectUrlRef.current);
-        avatarPreviewObjectUrlRef.current = null;
-      }
     };
   }, []);
 
@@ -605,59 +570,27 @@ export default function AdminDashboard({ session }) {
     setProfileForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleImageSelection = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) {
+  const handleAvatarUpload = (uploadedUrl) => {
+    const normalizedUrl = typeof uploadedUrl === "string" ? uploadedUrl.trim() : "";
+    if (!normalizedUrl) {
+      setError("Avatar upload did not return a valid image URL.");
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        setSelectedImage(reader.result);
-        setCropDialogOpen(true);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleCropComplete = (_event, croppedPixels) => {
-    setCroppedAreaPixels(croppedPixels);
-  };
-
-  const handleCropCancel = () => {
-    setCropDialogOpen(false);
-    setSelectedImage("");
-  };
-
-  const handleCropSave = async () => {
-    if (!selectedImage || !croppedAreaPixels) {
-      return;
-    }
-
-    try {
-      const blob = await getCroppedImage(selectedImage, croppedAreaPixels);
-      revokeAvatarPreviewObjectUrl();
-      const previewUrl = URL.createObjectURL(blob);
-      avatarPreviewObjectUrlRef.current = previewUrl;
-      setAvatarBlob(blob);
-      setAvatarPreview(previewUrl);
-      setAvatarType("image/png");
-      setAvatarRemoved(false);
-      setCropDialogOpen(false);
-      setSelectedImage("");
-    } catch {
-      setError("Unable to process the image. Please try another file.");
-      setCropDialogOpen(false);
-    }
+    setAvatarPreview(normalizedUrl);
+    setAvatarRemoved(false);
+    setAvatarDirty(true);
+    setError("");
   };
 
   const handleAvatarRemove = () => {
-    revokeAvatarPreviewObjectUrl();
-    setAvatarBlob(null);
-    setAvatarType("");
+    if (!avatarPreview) {
+      return;
+    }
+
     setAvatarPreview("");
     setAvatarRemoved(true);
+    setAvatarDirty(true);
   };
 
   const handleHolidayChange = (index, key, value) => {
@@ -694,7 +627,6 @@ export default function AdminDashboard({ session }) {
     setProfileSaving(true);
 
     try {
-      const avatarBase64 = avatarBlob ? await blobToBase64(avatarBlob) : null;
       const payloadBody = {
         city: profileForm.city,
         skills: profileForm.skills,
@@ -705,11 +637,8 @@ export default function AdminDashboard({ session }) {
         ),
       };
 
-      if (avatarBase64) {
-        payloadBody.avatar = avatarBase64;
-        payloadBody.avatarType = avatarType || "image/png";
-      } else if (avatarRemoved) {
-        payloadBody.avatar = null;
+      if (avatarDirty) {
+        payloadBody.avatar = avatarRemoved ? null : avatarPreview;
       }
 
       const response = await fetch("/api/profile", {
@@ -724,10 +653,8 @@ export default function AdminDashboard({ session }) {
       }
 
       const updatedImage = body?.profile?.image;
-      revokeAvatarPreviewObjectUrl();
       setAvatarPreview(typeof updatedImage === "string" ? updatedImage : "");
-      setAvatarBlob(null);
-      setAvatarType("");
+      setAvatarDirty(false);
       setAvatarRemoved(false);
       setInfo("Personal information updated.");
     } catch (saveError) {
@@ -859,10 +786,10 @@ export default function AdminDashboard({ session }) {
                   profileSaving={profileSaving}
                   profileForm={profileForm}
                   avatarPreview={avatarPreview}
-                  avatarBlob={avatarBlob}
                   onSavePersonalInfo={savePersonalInfo}
                   onProfileFieldChange={handleProfileFieldChange}
-                  onImageSelection={handleImageSelection}
+                  onAvatarUpload={handleAvatarUpload}
+                  onAvatarUploadError={setError}
                   onAvatarRemove={handleAvatarRemove}
                   onProfileSkillsChange={(skills) =>
                     setProfileForm((prev) => ({ ...prev, skills }))
@@ -914,18 +841,6 @@ export default function AdminDashboard({ session }) {
           </Box>
         </Paper>
       </Container>
-
-      <AvatarCropDialog
-        open={cropDialogOpen}
-        image={selectedImage}
-        crop={crop}
-        zoom={zoom}
-        onClose={handleCropCancel}
-        onApply={handleCropSave}
-        onCropChange={setCrop}
-        onZoomChange={setZoom}
-        onCropComplete={handleCropComplete}
-      />
     </Box>
   );
 }

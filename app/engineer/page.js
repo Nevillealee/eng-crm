@@ -7,7 +7,7 @@ import EngineerOnboardingWizard from "../components/engineer-onboarding-wizard";
 export default async function EngineerPage() {
   const session = await auth();
 
-  if (!session) {
+  if (!session?.user?.id) {
     redirect("/login");
   }
 

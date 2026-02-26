@@ -86,12 +86,7 @@ export async function PATCH(request) {
           ? patchInput.onboardingCompleted
           : undefined,
         onboardingStep: patchInput.requestedOnboardingStep ?? undefined,
-        avatar: patchInput.avatarUpdate.hasAvatarUpdate
-          ? patchInput.avatarUpdate.avatarBuffer
-          : undefined,
-        avatarMimeType: patchInput.avatarUpdate.hasAvatarUpdate
-          ? patchInput.avatarUpdate.avatarMimeType
-          : undefined,
+        image: patchInput.avatarUpdate.hasAvatarUpdate ? patchInput.avatarUpdate.avatarUrl : undefined,
       },
       select: profileSelect,
     });

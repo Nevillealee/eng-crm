@@ -11,6 +11,7 @@ import {
   Typography,
 } from "@mui/material";
 import { FormDateField, FormSelectField, FormTextField } from "../form-fields";
+import CloudinaryAvatarUploadButton from "../cloudinary-avatar-upload-button";
 import { availabilityOptions, engineerSkillOptions } from "../profile-form-shared";
 
 const placeholderAvatar = "/images/nonbinary-avatar.svg";
@@ -20,10 +21,10 @@ export default function PersonalPanel({
   saving,
   form,
   avatarPreview,
-  avatarBlob,
   onSubmit,
   onFieldChange,
-  onImageSelection,
+  onAvatarUpload,
+  onAvatarUploadError,
   onAvatarRemove,
   onSkillsChange,
   onHolidayChange,
@@ -37,16 +38,17 @@ export default function PersonalPanel({
         <Typography color="text.secondary">Update your skillset and availability details.</Typography>
         <Stack direction="row" spacing={2} alignItems="center">
           <Avatar src={avatarPreview || placeholderAvatar} sx={{ width: 64, height: 64 }} />
-          <Button type="button" variant="outlined" component="label" disabled={loading || saving}>
-            Upload avatar
-            <input hidden accept="image/*" type="file" onChange={onImageSelection} />
-          </Button>
+          <CloudinaryAvatarUploadButton
+            disabled={loading || saving}
+            onUpload={onAvatarUpload}
+            onError={onAvatarUploadError}
+          />
           <Button
             type="button"
             variant="text"
             color="error"
             onClick={onAvatarRemove}
-            disabled={loading || saving || (!avatarPreview && !avatarBlob)}
+            disabled={loading || saving || !avatarPreview}
           >
             Remove avatar
           </Button>

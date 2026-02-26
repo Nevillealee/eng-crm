@@ -13,9 +13,7 @@ describe("engineer CRUD integration checks", () => {
             firstName: "Alex",
             lastName: "Dev",
             name: "Alex Dev",
-            image: null,
-            avatar: Buffer.from("avatar-bytes"),
-            avatarMimeType: "image/png",
+            image: "https://res.cloudinary.com/demo/image/upload/alex-dev.png",
             city: "Manila",
             skills: ["JavaScript"],
             availabilityStatus: "available",
@@ -67,7 +65,9 @@ describe("engineer CRUD integration checks", () => {
     expect(response.status).toBe(200);
     expect(payload.ok).toBe(true);
     expect(payload.engineers).toHaveLength(1);
-    expect(payload.engineers[0].avatarSrc).toContain("data:image/png;base64,");
+    expect(payload.engineers[0].image).toBe(
+      "https://res.cloudinary.com/demo/image/upload/alex-dev.png"
+    );
 
     response = await PATCH(
       jsonRequest("http://localhost/api/admin/engineers/eng-10", "PATCH", {

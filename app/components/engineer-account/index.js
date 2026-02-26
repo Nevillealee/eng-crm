@@ -1,25 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { signOut } from "next-auth/react";
 import { Alert, Box, Container, Paper, Stack } from "@mui/material";
-import AvatarCropDialog from "../avatar-crop-dialog";
 import { emptyHoliday, nextDateInputValue, skillOptionSet } from "../profile-form-shared";
-import getCroppedImage from "../../signup/crop-image";
 import AccountNavigation from "./account-navigation";
 import { formatDateLabel } from "./formatters";
 import PersonalPanel from "./personal-panel";
 import ProjectsPanel from "./projects-panel";
-
-async function toBase64(blob) {
-  const buffer = await blob.arrayBuffer();
-  let binary = "";
-  const bytes = new Uint8Array(buffer);
-  bytes.forEach((byte) => {
-    binary += String.fromCharCode(byte);
-  });
-  return btoa(binary);
-}
 
 export default function EngineerAccount() {
   const [activePanel, setActivePanel] = useState("personal");
@@ -29,29 +17,15 @@ export default function EngineerAccount() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [projects, setProjects] = useState([]);
-  const [cropDialogOpen, setCropDialogOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState("");
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
-  const [avatarBlob, setAvatarBlob] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState("");
-  const [avatarType, setAvatarType] = useState("");
+  const [avatarDirty, setAvatarDirty] = useState(false);
   const [avatarRemoved, setAvatarRemoved] = useState(false);
-  const avatarPreviewObjectUrlRef = useRef(null);
   const [form, setForm] = useState({
     skills: [],
     availabilityStatus: "available",
     availabilityNote: "",
     upcomingHolidays: [emptyHoliday()],
   });
-
-  const revokeAvatarPreviewObjectUrl = () => {
-    if (avatarPreviewObjectUrlRef.current) {
-      URL.revokeObjectURL(avatarPreviewObjectUrlRef.current);
-      avatarPreviewObjectUrlRef.current = null;
-    }
-  };
 
   useEffect(() => {
     let mounted = true;
@@ -81,6 +55,8 @@ export default function EngineerAccount() {
           upcomingHolidays: holidays.length ? holidays : [emptyHoliday()],
         });
         setAvatarPreview(typeof profile.image === "string" ? profile.image : "");
+        setAvatarDirty(false);
+        setAvatarRemoved(false);
       } catch (loadError) {
         if (mounted) {
           setError(loadError.message || "Unable to load profile.");
@@ -125,73 +101,32 @@ export default function EngineerAccount() {
     };
   }, []);
 
-  useEffect(() => {
-    return () => {
-      if (avatarPreviewObjectUrlRef.current) {
-        URL.revokeObjectURL(avatarPreviewObjectUrlRef.current);
-        avatarPreviewObjectUrlRef.current = null;
-      }
-    };
-  }, []);
-
   const handleFieldChange = (event) => {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleImageSelection = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) {
+  const handleAvatarUpload = (uploadedUrl) => {
+    const normalizedUrl = typeof uploadedUrl === "string" ? uploadedUrl.trim() : "";
+    if (!normalizedUrl) {
+      setError("Avatar upload did not return a valid image URL.");
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        setSelectedImage(reader.result);
-        setCropDialogOpen(true);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleCropComplete = (_event, croppedPixels) => {
-    setCroppedAreaPixels(croppedPixels);
-  };
-
-  const handleCropCancel = () => {
-    setCropDialogOpen(false);
-    setSelectedImage("");
-  };
-
-  const handleCropSave = async () => {
-    if (!selectedImage || !croppedAreaPixels) {
-      return;
-    }
-
-    try {
-      const blob = await getCroppedImage(selectedImage, croppedAreaPixels);
-      revokeAvatarPreviewObjectUrl();
-      const previewUrl = URL.createObjectURL(blob);
-      avatarPreviewObjectUrlRef.current = previewUrl;
-      setAvatarBlob(blob);
-      setAvatarPreview(previewUrl);
-      setAvatarType("image/png");
-      setAvatarRemoved(false);
-      setCropDialogOpen(false);
-      setSelectedImage("");
-    } catch {
-      setError("Unable to process the image. Please try another file.");
-      setCropDialogOpen(false);
-    }
+    setAvatarPreview(normalizedUrl);
+    setAvatarRemoved(false);
+    setAvatarDirty(true);
+    setError("");
   };
 
   const handleAvatarRemove = () => {
-    revokeAvatarPreviewObjectUrl();
-    setAvatarBlob(null);
-    setAvatarType("");
+    if (!avatarPreview) {
+      return;
+    }
+
     setAvatarPreview("");
     setAvatarRemoved(true);
+    setAvatarDirty(true);
   };
 
   const handleHolidayChange = (index, key, value) => {
@@ -228,7 +163,6 @@ export default function EngineerAccount() {
     setSaving(true);
 
     try {
-      const avatarBase64 = avatarBlob ? await toBase64(avatarBlob) : null;
       const payloadBody = {
         skills: form.skills,
         availabilityStatus: form.availabilityStatus,
@@ -238,11 +172,8 @@ export default function EngineerAccount() {
         ),
       };
 
-      if (avatarBase64) {
-        payloadBody.avatar = avatarBase64;
-        payloadBody.avatarType = avatarType || "image/png";
-      } else if (avatarRemoved) {
-        payloadBody.avatar = null;
+      if (avatarDirty) {
+        payloadBody.avatar = avatarRemoved ? null : avatarPreview;
       }
 
       const response = await fetch("/api/profile", {
@@ -258,10 +189,8 @@ export default function EngineerAccount() {
       }
 
       const updatedImage = payload?.profile?.image;
-      revokeAvatarPreviewObjectUrl();
       setAvatarPreview(typeof updatedImage === "string" ? updatedImage : "");
-      setAvatarBlob(null);
-      setAvatarType("");
+      setAvatarDirty(false);
       setAvatarRemoved(false);
       setInfo("Profile updated.");
     } catch (saveError) {
@@ -310,10 +239,10 @@ export default function EngineerAccount() {
                   saving={saving}
                   form={form}
                   avatarPreview={avatarPreview}
-                  avatarBlob={avatarBlob}
                   onSubmit={handleSaveProfile}
                   onFieldChange={handleFieldChange}
-                  onImageSelection={handleImageSelection}
+                  onAvatarUpload={handleAvatarUpload}
+                  onAvatarUploadError={setError}
                   onAvatarRemove={handleAvatarRemove}
                   onSkillsChange={(skills) => setForm((prev) => ({ ...prev, skills }))}
                   onHolidayChange={handleHolidayChange}
@@ -333,18 +262,6 @@ export default function EngineerAccount() {
           </Box>
         </Paper>
       </Container>
-
-      <AvatarCropDialog
-        open={cropDialogOpen}
-        image={selectedImage}
-        crop={crop}
-        zoom={zoom}
-        onClose={handleCropCancel}
-        onApply={handleCropSave}
-        onCropChange={setCrop}
-        onZoomChange={setZoom}
-        onCropComplete={handleCropComplete}
-      />
     </Box>
   );
 }

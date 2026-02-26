@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Alert, Avatar, Box, Button, Stack, TextField, Typography } from "@mui/material";
 import { PASSWORD_MAX_BYTES } from "../constants/password-policy";
+import CloudinaryAvatarUploadButton from "../components/cloudinary-avatar-upload-button";
 
 const placeholderAvatar = "/images/nonbinary-avatar.svg";
 
@@ -15,16 +16,18 @@ export default function SignupForm({
   onSubmit,
   onFieldChange,
   onFieldBlur,
-  onImageSelection,
+  onAvatarUpload,
+  onAvatarUploadError,
 }) {
   return (
     <Stack spacing={3}>
       <Stack spacing={1} alignItems="center">
         <Avatar src={avatarPreview || placeholderAvatar} sx={{ width: 96, height: 96 }} />
-        <Button variant="outlined" component="label">
-          Upload avatar
-          <input hidden accept="image/*" type="file" onChange={onImageSelection} />
-        </Button>
+        <CloudinaryAvatarUploadButton
+          disabled={isSubmitting}
+          onUpload={onAvatarUpload}
+          onError={onAvatarUploadError}
+        />
       </Stack>
       <Stack spacing={1}>
         <Typography variant="h4">Create your account</Typography>

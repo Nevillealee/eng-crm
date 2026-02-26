@@ -29,8 +29,6 @@ model User {
   onboardingStep      Int     @default(1) @map("onboarding_step")
   emailVerified DateTime?
   image         String?
-  avatar        Bytes?
-  avatarMimeType String? @map("avatar_mime_type")
   password      String
   resetPasswordToken String? @unique @map("reset_password_token")
   resetPasswordExpires DateTime? @map("reset_password_expires")

@@ -1,11 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Box, Container, Paper } from "@mui/material";
-import AvatarCropDialog from "../components/avatar-crop-dialog";
-import { blobToBase64 } from "../components/profile-form-shared";
-import getCroppedImage from "./crop-image";
 import SignupForm from "./form";
 import { validateSignupField, validateSignupForm } from "./validation";
 
@@ -21,31 +18,8 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [cropDialogOpen, setCropDialogOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState("");
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
-  const [avatarBlob, setAvatarBlob] = useState(null);
+  const [avatarUrl, setAvatarUrl] = useState("");
   const [avatarPreview, setAvatarPreview] = useState("");
-  const [avatarType, setAvatarType] = useState("");
-  const avatarPreviewObjectUrlRef = useRef(null);
-
-  const revokeAvatarPreviewObjectUrl = () => {
-    if (avatarPreviewObjectUrlRef.current) {
-      URL.revokeObjectURL(avatarPreviewObjectUrlRef.current);
-      avatarPreviewObjectUrlRef.current = null;
-    }
-  };
-
-  useEffect(() => {
-    return () => {
-      if (avatarPreviewObjectUrlRef.current) {
-        URL.revokeObjectURL(avatarPreviewObjectUrlRef.current);
-        avatarPreviewObjectUrlRef.current = null;
-      }
-    };
-  }, []);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -63,48 +37,16 @@ export default function SignupPage() {
     setFieldErrors((prev) => ({ ...prev, [name]: err }));
   };
 
-  const handleImageSelection = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) {
+  const handleAvatarUpload = (uploadedUrl) => {
+    const normalizedUrl = typeof uploadedUrl === "string" ? uploadedUrl.trim() : "";
+    if (!normalizedUrl) {
+      setError("Avatar upload did not return a valid image URL.");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        setSelectedImage(reader.result);
-        setCropDialogOpen(true);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
 
-  const handleCropComplete = (_, croppedPixels) => {
-    setCroppedAreaPixels(croppedPixels);
-  };
-
-  const handleCropCancel = () => {
-    setCropDialogOpen(false);
-    setSelectedImage("");
-  };
-
-  const handleCropSave = async () => {
-    if (!selectedImage || !croppedAreaPixels) {
-      return;
-    }
-    try {
-      const blob = await getCroppedImage(selectedImage, croppedAreaPixels);
-      revokeAvatarPreviewObjectUrl();
-      const previewUrl = URL.createObjectURL(blob);
-      avatarPreviewObjectUrlRef.current = previewUrl;
-      setAvatarBlob(blob);
-      setAvatarPreview(previewUrl);
-      setAvatarType("image/png");
-      setCropDialogOpen(false);
-      setSelectedImage("");
-    } catch {
-      setError("Unable to process the image. Please try another file.");
-      setCropDialogOpen(false);
-    }
+    setAvatarUrl(normalizedUrl);
+    setAvatarPreview(normalizedUrl);
+    setError("");
   };
 
   const handleSubmit = async (event) => {
@@ -120,15 +62,12 @@ export default function SignupPage() {
     setIsSubmitting(true);
 
     try {
-      const avatarBase64 = avatarBlob ? await blobToBase64(avatarBlob) : null;
-
       const response = await fetch("/api/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formState,
-          avatar: avatarBase64,
-          avatarType: avatarBase64 ? avatarType : null,
+          avatar: avatarUrl || null,
         }),
       });
 
@@ -142,7 +81,6 @@ export default function SignupPage() {
         return;
       }
 
-      revokeAvatarPreviewObjectUrl();
       router.push("/login?signup=success");
       router.refresh();
     } catch {
@@ -172,22 +110,11 @@ export default function SignupPage() {
             onSubmit={handleSubmit}
             onFieldChange={handleChange}
             onFieldBlur={handleBlur}
-            onImageSelection={handleImageSelection}
+            onAvatarUpload={handleAvatarUpload}
+            onAvatarUploadError={setError}
           />
         </Paper>
       </Container>
-      <AvatarCropDialog
-        open={cropDialogOpen}
-        image={selectedImage}
-        crop={crop}
-        zoom={zoom}
-        onClose={handleCropCancel}
-        onApply={handleCropSave}
-        onCropChange={setCrop}
-        onZoomChange={setZoom}
-        onCropComplete={handleCropComplete}
-        applyLabel="Save"
-      />
     </Box>
   );
 }

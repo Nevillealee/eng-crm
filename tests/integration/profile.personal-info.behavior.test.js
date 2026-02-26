@@ -21,9 +21,7 @@ describe("Given personal information form persistence", () => {
           email: "admin@example.com",
           firstName: "Admin",
           lastName: "User",
-          image: null,
-          avatar: data.avatar,
-          avatarMimeType: data.avatarMimeType,
+          image: data.image,
           city: data.city,
           skills: data.skills,
           availabilityStatus: data.availabilityStatus,
@@ -52,7 +50,7 @@ describe("Given personal information form persistence", () => {
       extractRequestIp: jest.fn(() => null),
     }));
 
-    const avatar = Buffer.from("admin-avatar-image-bytes").toString("base64");
+    const avatar = "https://res.cloudinary.com/demo/image/upload/admin-avatar.png";
     const payloadBody = {
       city: "Cebu",
       skills: ["JavaScript", "React"],
@@ -66,7 +64,6 @@ describe("Given personal information form persistence", () => {
         },
       ],
       avatar,
-      avatarType: "image/png",
     };
 
     const { PATCH } = await import("../../app/api/profile/route.js");
@@ -101,9 +98,7 @@ describe("Given personal information form persistence", () => {
     );
 
     const updateCall = prismaMock.user.update.mock.calls[0][0];
-    expect(updateCall.data.avatarMimeType).toBe("image/png");
-    expect(Buffer.isBuffer(updateCall.data.avatar)).toBe(true);
-    expect(updateCall.data.avatar.toString("base64")).toBe(avatar);
+    expect(updateCall.data.image).toBe(avatar);
   });
 
   it("When the admin personal information form payload removes avatar, then avatar data is cleared", async () => {
@@ -126,9 +121,7 @@ describe("Given personal information form persistence", () => {
           email: "admin@example.com",
           firstName: "Admin",
           lastName: "User",
-          image: null,
-          avatar: data.avatar,
-          avatarMimeType: data.avatarMimeType,
+          image: data.image,
           city: data.city,
           skills: data.skills,
           availabilityStatus: data.availabilityStatus,
@@ -180,8 +173,7 @@ describe("Given personal information form persistence", () => {
     expect(payload.ok).toBe(true);
 
     const updateCall = prismaMock.user.update.mock.calls[0][0];
-    expect(updateCall.data.avatar).toBeNull();
-    expect(updateCall.data.avatarMimeType).toBeNull();
+    expect(updateCall.data.image).toBeNull();
   });
 
   it("When the engineer account personal form payload is submitted, then avatar and profile fields persist", async () => {
@@ -205,9 +197,7 @@ describe("Given personal information form persistence", () => {
           email: "eng1@example.com",
           firstName: "Eng",
           lastName: "User",
-          image: null,
-          avatar: data.avatar,
-          avatarMimeType: data.avatarMimeType,
+          image: data.image,
           city: data.city,
           skills: data.skills,
           availabilityStatus: data.availabilityStatus,
@@ -236,7 +226,7 @@ describe("Given personal information form persistence", () => {
       extractRequestIp: jest.fn(() => null),
     }));
 
-    const avatar = Buffer.from("avatar-image-bytes").toString("base64");
+    const avatar = "https://res.cloudinary.com/demo/image/upload/engineer-avatar.png";
     const payloadBody = {
       skills: ["Node.js", "React"],
       availabilityStatus: "available",
@@ -249,7 +239,6 @@ describe("Given personal information form persistence", () => {
         },
       ],
       avatar,
-      avatarType: "image/png",
     };
 
     const { PATCH } = await import("../../app/api/profile/route.js");
@@ -272,11 +261,9 @@ describe("Given personal information form persistence", () => {
             endDate: "2026-07-02",
           },
         ],
-        avatarMimeType: "image/png",
+        image: avatar,
       })
     );
-    expect(Buffer.isBuffer(updateCall.data.avatar)).toBe(true);
-    expect(updateCall.data.avatar.toString("base64")).toBe(avatar);
 
     expect(recordAdminAudit).toHaveBeenCalled();
   });

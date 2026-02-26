@@ -10,16 +10,6 @@ export const availabilityOptions = [
 
 export const skillOptionSet = new Set(ENGINEER_SKILL_OPTIONS);
 
-export async function blobToBase64(blob) {
-  const buffer = await blob.arrayBuffer();
-  let binary = "";
-  const bytes = new Uint8Array(buffer);
-  bytes.forEach((byte) => {
-    binary += String.fromCharCode(byte);
-  });
-  return btoa(binary);
-}
-
 export function emptyHoliday() {
   return { label: "", startDate: "", endDate: "" };
 }

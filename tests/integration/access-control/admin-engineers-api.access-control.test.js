@@ -54,8 +54,6 @@ describe("Given admin engineer management endpoints", () => {
             lastName: "Seven",
             name: "Eng Seven",
             image: null,
-            avatar: null,
-            avatarMimeType: null,
             city: "Cebu",
             skills: ["JavaScript"],
             availabilityStatus: "available",

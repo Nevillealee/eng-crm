@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import { ENGINEER_SKILL_OPTIONS } from "../../../constants/engineer-skills";
 import { FormDateField, FormSelectField, FormTextField } from "../../form-fields";
+import CloudinaryAvatarUploadButton from "../../cloudinary-avatar-upload-button";
 import { availabilityOptions } from "../shared/constants";
 
 const placeholderAvatar = "/images/nonbinary-avatar.svg";
@@ -23,10 +24,10 @@ export default function PersonalPanel({
   profileSaving,
   profileForm,
   avatarPreview,
-  avatarBlob,
   onSavePersonalInfo,
   onProfileFieldChange,
-  onImageSelection,
+  onAvatarUpload,
+  onAvatarUploadError,
   onAvatarRemove,
   onProfileSkillsChange,
   onHolidayChange,
@@ -42,21 +43,17 @@ export default function PersonalPanel({
             <FormTextField label="Email" value={session?.user?.email || ""} disabled />
             <Stack direction="row" spacing={2} alignItems="center">
               <Avatar src={avatarPreview || placeholderAvatar} sx={{ width: 64, height: 64 }} />
-              <Button
-                type="button"
-                variant="outlined"
-                component="label"
+              <CloudinaryAvatarUploadButton
                 disabled={loading || profileSaving}
-              >
-                Upload avatar
-                <input hidden accept="image/*" type="file" onChange={onImageSelection} />
-              </Button>
+                onUpload={onAvatarUpload}
+                onError={onAvatarUploadError}
+              />
               <Button
                 type="button"
                 variant="text"
                 color="error"
                 onClick={onAvatarRemove}
-                disabled={loading || profileSaving || (!avatarPreview && !avatarBlob)}
+                disabled={loading || profileSaving || !avatarPreview}
               >
                 Remove avatar
               </Button>

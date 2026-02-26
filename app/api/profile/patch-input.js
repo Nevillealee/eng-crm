@@ -21,7 +21,7 @@ export function parseProfilePatchInput(body) {
   const hasOnboardingCompletedUpdate = typeof source.onboardingCompleted === "boolean";
   const onboardingCompleted = hasOnboardingCompletedUpdate ? source.onboardingCompleted : undefined;
   const requestedOnboardingStep = Number.isInteger(source.onboardingStep) ? source.onboardingStep : null;
-  const avatarUpdate = parseAvatarUpdate(source.avatar, source.avatarType);
+  const avatarUpdate = parseAvatarUpdate(source.avatar);
 
   return {
     hasCityUpdate,

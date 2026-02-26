@@ -1,10 +1,7 @@
 import {
-  ALLOWED_AVATAR_MIME_TYPES,
-  AVATAR_MAX_BYTES,
   AVATAR_INVALID_ERROR,
-  AVATAR_TOO_LARGE_ERROR,
-  AVATAR_TYPE_INVALID_ERROR,
-  BASE64_CONTENT_PATTERN,
+  AVATAR_URL_MAX_LENGTH,
+  AVATAR_URL_TOO_LONG_ERROR,
 } from "../../constants/avatar";
 import { PROFILE_HOLIDAY_LABEL_MAX_LENGTH } from "../../constants/text-limits";
 
@@ -17,6 +14,34 @@ export const maxOnboardingStep = 3;
 
 function isValidDateString(value) {
   return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function normalizeAvatarUrl(avatar) {
+  if (typeof avatar !== "string") {
+    return { error: AVATAR_INVALID_ERROR };
+  }
+
+  const trimmedAvatar = avatar.trim();
+  if (!trimmedAvatar) {
+    return { avatarUrl: null };
+  }
+
+  if (trimmedAvatar.length > AVATAR_URL_MAX_LENGTH) {
+    return { error: AVATAR_URL_TOO_LONG_ERROR };
+  }
+
+  let parsed;
+  try {
+    parsed = new URL(trimmedAvatar);
+  } catch {
+    return { error: AVATAR_INVALID_ERROR };
+  }
+
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+    return { error: AVATAR_INVALID_ERROR };
+  }
+
+  return { avatarUrl: parsed.toString() };
 }
 
 export function parseSkills(value) {
@@ -67,64 +92,21 @@ export function parseHolidays(value) {
   return parsed;
 }
 
-export function toAvatarDataUrl(avatar, avatarMimeType) {
-  if (
-    !avatar ||
-    typeof avatarMimeType !== "string" ||
-    !ALLOWED_AVATAR_MIME_TYPES.has(avatarMimeType)
-  ) {
-    return null;
-  }
-  const avatarBuffer =
-    Buffer.isBuffer(avatar) ? avatar : avatar instanceof Uint8Array ? Buffer.from(avatar) : null;
-  if (!avatarBuffer || avatarBuffer.length === 0) {
-    return null;
-  }
-  return `data:${avatarMimeType};base64,${avatarBuffer.toString("base64")}`;
-}
-
-function estimateBase64ByteLength(value) {
-  if (value.length % 4 !== 0) {
-    return null;
-  }
-
-  const paddingLength = value.endsWith("==") ? 2 : value.endsWith("=") ? 1 : 0;
-  return (value.length / 4) * 3 - paddingLength;
-}
-
-export function parseAvatarUpdate(avatar, avatarType) {
+export function parseAvatarUpdate(avatar) {
   if (avatar === undefined) {
     return { hasAvatarUpdate: false };
   }
 
   if (avatar === null) {
-    return { hasAvatarUpdate: true, avatarBuffer: null, avatarMimeType: null };
+    return { hasAvatarUpdate: true, avatarUrl: null };
   }
 
-  if (typeof avatar !== "string") {
-    return { error: AVATAR_INVALID_ERROR };
+  const parsed = normalizeAvatarUrl(avatar);
+  if (parsed.error) {
+    return { error: parsed.error };
   }
 
-  const normalizedAvatar = avatar.trim();
-  if (!normalizedAvatar || !BASE64_CONTENT_PATTERN.test(normalizedAvatar)) {
-    return { error: AVATAR_INVALID_ERROR };
-  }
-
-  if (typeof avatarType !== "string" || !ALLOWED_AVATAR_MIME_TYPES.has(avatarType)) {
-    return { error: AVATAR_TYPE_INVALID_ERROR };
-  }
-
-  const estimatedBytes = estimateBase64ByteLength(normalizedAvatar);
-  if (!estimatedBytes || estimatedBytes > AVATAR_MAX_BYTES) {
-    return { error: AVATAR_TOO_LARGE_ERROR };
-  }
-
-  const avatarBuffer = Buffer.from(normalizedAvatar, "base64");
-  if (!avatarBuffer.length || avatarBuffer.length > AVATAR_MAX_BYTES) {
-    return { error: AVATAR_TOO_LARGE_ERROR };
-  }
-
-  return { hasAvatarUpdate: true, avatarBuffer, avatarMimeType: avatarType };
+  return { hasAvatarUpdate: true, avatarUrl: parsed.avatarUrl };
 }
 
 export function normalizeSkillsForCompare(value) {
@@ -160,9 +142,7 @@ export function normalizeHolidaysForCompare(value) {
 export function toProfileDto(user) {
   return {
     ...user,
-    image: toAvatarDataUrl(user.avatar, user.avatarMimeType) || user.image || null,
-    avatar: undefined,
-    avatarMimeType: undefined,
+    image: typeof user.image === "string" ? user.image : null,
   };
 }
 

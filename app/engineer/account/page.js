@@ -6,7 +6,7 @@ import EngineerAccount from "../../components/engineer-account";
 export default async function EngineerAccountPage() {
   const session = await auth();
 
-  if (!session) {
+  if (!session?.user?.id) {
     redirect("/login");
   }
 

@@ -24,8 +24,6 @@ export async function GET() {
         lastName: true,
         name: true,
         image: true,
-        avatar: true,
-        avatarMimeType: true,
         city: true,
         skills: true,
         availabilityStatus: true,
@@ -39,15 +37,7 @@ export async function GET() {
       },
     });
 
-    const engineersWithAvatars = engineers.map(({ avatar, avatarMimeType, ...rest }) => ({
-      ...rest,
-      avatarSrc:
-        avatar && avatarMimeType
-          ? `data:${avatarMimeType};base64,${Buffer.from(avatar).toString("base64")}`
-          : null,
-    }));
-
-    return NextResponse.json({ ok: true, engineers: engineersWithAvatars });
+    return NextResponse.json({ ok: true, engineers });
   } catch (error) {
     console.error("Engineer list retrieval failed.", error);
     return NextResponse.json(

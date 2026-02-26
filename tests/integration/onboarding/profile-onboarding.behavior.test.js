@@ -65,8 +65,6 @@ describe("Given onboarding profile updates", () => {
           firstName: "Eng",
           lastName: "User",
           image: null,
-          avatar: null,
-          avatarMimeType: null,
           city: "Manila",
           skills: ["JavaScript"],
           availabilityStatus: "available",
