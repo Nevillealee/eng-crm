@@ -85,3 +85,8 @@ Legend:
   - Add a calendar panel to the admin dashboard.
   - Surfaces engineer time-off / upcoming holidays and project start/end dates in a unified calendar.
   - Should support month/week views and be filterable by engineer or project.
+- Migrate off Nextjs to Vite
+  - Evaluate Vite + React + MUI as an alternative to Next.js for improved build times and development experience.
+  - Would require re-implementing routing, API routes, and server-side logic currently handled by Next.js using React router instead.
+  - Remove all nextjs specific code and dependencies, replacing with Vite-compatible alternatives.
+  - Create a new Vite project (parallel or in same repo), install dependencies then port over components, pages, and API route logic iteratively. Use fetch for API calls
