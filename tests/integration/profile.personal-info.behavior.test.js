@@ -176,7 +176,7 @@ describe("Given personal information form persistence", () => {
     expect(updateCall.data.image).toBeNull();
   });
 
-  it("When the engineer account personal form payload is submitted, then avatar and profile fields persist", async () => {
+  it("When the engineer account personal form payload omits city, then existing city is preserved", async () => {
     jest.resetModules();
 
     const recordAdminAudit = jest.fn();
@@ -251,6 +251,7 @@ describe("Given personal information form persistence", () => {
     const updateCall = prismaMock.user.update.mock.calls[0][0];
     expect(updateCall.data).toEqual(
       expect.objectContaining({
+        city: "Manila",
         skills: ["Node.js", "React"],
         availabilityStatus: "available",
         availabilityNote: "Open to new work",

@@ -10,6 +10,9 @@ export function clampOnboardingStep(value) {
 
 export function createOnboardingForm() {
   return {
+    firstName: "",
+    lastName: "",
+    city: "",
     skills: [],
     availabilityStatus: "available",
     availabilityNote: "",
@@ -22,6 +25,9 @@ export function normalizeOnboardingProfile(profile) {
   const holidays = Array.isArray(source.upcomingHolidays) ? source.upcomingHolidays : [];
 
   return {
+    firstName: typeof source.firstName === "string" ? source.firstName : "",
+    lastName: typeof source.lastName === "string" ? source.lastName : "",
+    city: typeof source.city === "string" ? source.city : "",
     skills: Array.isArray(source.skills)
       ? source.skills.filter((skill) => skillOptionSet.has(skill))
       : [],
@@ -47,6 +53,9 @@ export async function persistOnboardingProfile(form, nextStep, complete) {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
+      firstName: form.firstName,
+      lastName: form.lastName,
+      city: form.city,
       skills: form.skills,
       availabilityStatus: form.availabilityStatus,
       availabilityNote: form.availabilityNote,

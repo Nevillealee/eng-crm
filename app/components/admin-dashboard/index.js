@@ -57,6 +57,8 @@ function emptyProjectForm() {
 function withEngineerDrafts(engineers) {
   return engineers.map((engineer) => ({
     ...engineer,
+    image: typeof engineer.image === "string" ? engineer.image.trim() : null,
+    cityDraft: typeof engineer.city === "string" ? engineer.city : "",
     monthlySalaryPhpDraft:
       typeof engineer.monthlySalaryPhp === "number" ? String(engineer.monthlySalaryPhp) : "",
     salaryNotesDraft: engineer.salaryNotes || "",
@@ -88,6 +90,8 @@ export default function AdminDashboard({ session }) {
   const [projectSortBy, setProjectSortBy] = useState("date");
   const [projectSortDirection, setProjectSortDirection] = useState("desc");
   const [profileForm, setProfileForm] = useState({
+    firstName: "",
+    lastName: "",
     city: "",
     skills: [],
     availabilityStatus: "available",
@@ -233,6 +237,8 @@ export default function AdminDashboard({ session }) {
         setProjects(Array.isArray(projectsPayload?.projects) ? projectsPayload.projects : []);
         setAuditLogs(Array.isArray(auditLogPayload?.logs) ? auditLogPayload.logs : []);
         setProfileForm({
+          firstName: typeof profile.firstName === "string" ? profile.firstName : "",
+          lastName: typeof profile.lastName === "string" ? profile.lastName : "",
           city: profile.city || "",
           skills: Array.isArray(profile.skills)
             ? profile.skills.filter((skill) => skillOptionSet.has(skill))
@@ -472,6 +478,7 @@ export default function AdminDashboard({ session }) {
         engineer.id === engineerId
           ? {
               ...engineer,
+              cityDraft: engineer.city || "",
               monthlySalaryPhpDraft:
                 typeof engineer.monthlySalaryPhp === "number"
                   ? String(engineer.monthlySalaryPhp)
@@ -490,6 +497,7 @@ export default function AdminDashboard({ session }) {
         engineer.id === engineerId
           ? {
               ...engineer,
+              cityDraft: engineer.city || "",
               monthlySalaryPhpDraft:
                 typeof engineer.monthlySalaryPhp === "number"
                   ? String(engineer.monthlySalaryPhp)
@@ -517,6 +525,7 @@ export default function AdminDashboard({ session }) {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          city: engineer.cityDraft,
           monthlySalaryPhp:
             engineer.monthlySalaryPhpDraft === "" ? null : engineer.monthlySalaryPhpDraft,
           salaryNotes: engineer.salaryNotesDraft,
@@ -535,6 +544,8 @@ export default function AdminDashboard({ session }) {
             item.id === engineerId
               ? {
                   ...item,
+                  city: updated.city,
+                  cityDraft: updated.city || "",
                   monthlySalaryPhp: updated.monthlySalaryPhp,
                   salaryNotes: updated.salaryNotes,
                   monthlySalaryPhpDraft:
@@ -548,10 +559,10 @@ export default function AdminDashboard({ session }) {
         );
       }
 
-      setInfo("Engineer compensation updated.");
+      setInfo("Engineer details updated.");
       setEditingEngineerCompId("");
     } catch (saveError) {
-      setError(saveError.message || "Unable to update engineer salary.");
+      setError(saveError.message || "Unable to update engineer details.");
     } finally {
       setSalarySavingEngineerId("");
     }
@@ -628,6 +639,8 @@ export default function AdminDashboard({ session }) {
 
     try {
       const payloadBody = {
+        firstName: profileForm.firstName,
+        lastName: profileForm.lastName,
         city: profileForm.city,
         skills: profileForm.skills,
         availabilityStatus: profileForm.availabilityStatus,
@@ -678,6 +691,27 @@ export default function AdminDashboard({ session }) {
   const selectPanel = (panelId) => {
     setActivePanel(panelId);
     setMobileNavOpen(false);
+
+    if (panelId === "engineers") {
+      fetch("/api/admin/engineers")
+        .then((response) =>
+          response
+            .json()
+            .catch(() => ({}))
+            .then((payload) => ({ response, payload }))
+        )
+        .then(({ response, payload }) => {
+          if (!response.ok) {
+            throw new Error(payload?.error || "Unable to load engineers.");
+          }
+          setEngineers(
+            withEngineerDrafts(Array.isArray(payload?.engineers) ? payload.engineers : [])
+          );
+        })
+        .catch((loadError) => {
+          setError(loadError.message || "Unable to load engineers.");
+        });
+    }
   };
 
   const disabled = saving || profileSaving;

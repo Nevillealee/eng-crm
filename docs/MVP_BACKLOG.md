@@ -90,6 +90,11 @@ Status: Complete (as of February 26, 2026)
   - Redesign the site's appearance for mobile screens across authentication, onboarding, engineer, and admin views.
   - Apply UI/UX best practices for mobile using MUI responsive design patterns (breakpoints, touch targets, spacing, typography scale, and navigation).
   - Use this guidance as a design reference: https://medium.com/@WebdesignerDepot/essential-tips-for-converting-a-desktop-site-to-mobile-3686c35a7364
+  - Phases:
+    - Phase 1: Engineer dashboard shell mobile redesign (layout, navigation, global spacing/typography), using mobile UX do/don't guidance from https://medium.com/@pepper_square/mobile-ux-design-dos-donts-b68a4a990d5b (excluding accessibility-specific guidance).
+    - Phase 2: Engineer panel-by-panel mobile redesign (Personal panel, Projects panel, and any additional engineer subviews), continuing the same https://medium.com/@pepper_square/mobile-ux-design-dos-donts-b68a4a990d5b guidance (excluding accessibility-specific guidance).
+    - Phase 3: Admin dashboard shell mobile redesign (layout, navigation drawer/menu behavior, overview cards responsiveness).
+    - Phase 4: Admin panel-by-panel mobile redesign (Dashboard, Engineers, Personal, Projects, Audit, and related admin subviews).
 - Admin calendar view:
   - Add a calendar panel to the admin dashboard.
   - Surfaces engineer time-off / upcoming holidays and project start/end dates in a unified calendar.

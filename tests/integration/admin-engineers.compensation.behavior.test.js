@@ -11,12 +11,14 @@ describe("Given engineer compensation form persistence", () => {
           id: "eng-1",
           email: "eng1@example.com",
           isAdmin: false,
+          city: "Manila",
           monthlySalaryPhp: 90000,
           salaryNotes: "legacy",
         }),
         update: jest.fn().mockImplementation(async ({ data }) => ({
           id: "eng-1",
           email: "eng1@example.com",
+          city: data.city,
           monthlySalaryPhp: data.monthlySalaryPhp,
           salaryNotes: data.salaryNotes,
           updatedAt: new Date("2026-03-01T00:00:00.000Z"),
@@ -38,6 +40,7 @@ describe("Given engineer compensation form persistence", () => {
     }));
 
     const payloadBody = {
+      city: "Cebu",
       monthlySalaryPhp: "120,000",
       salaryNotes: "  updated notes  ",
     };
@@ -55,6 +58,7 @@ describe("Given engineer compensation form persistence", () => {
       expect.objectContaining({
         where: { id: "eng-1" },
         data: {
+          city: "Cebu",
           monthlySalaryPhp: 120000,
           salaryNotes: "updated notes",
         },

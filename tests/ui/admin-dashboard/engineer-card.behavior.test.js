@@ -14,6 +14,7 @@ function buildProps(overrides = {}) {
       upcomingHolidays: [],
       monthlySalaryPhp: null,
       salaryNotes: null,
+      cityDraft: "Cebu",
       monthlySalaryPhpDraft: "",
       salaryNotesDraft: "",
     },
@@ -61,5 +62,24 @@ describe("Given an engineer card in the admin dashboard", () => {
     );
 
     expect(locationChip.props.label).toBe("Location: Not set");
+  });
+
+  it("When location is edited in admin mode, then the draft callback receives the new value", () => {
+    const onUpdateEngineerDraft = jest.fn();
+    const tree = EngineerCard(
+      buildProps({
+        isEditingComp: true,
+        onUpdateEngineerDraft,
+      })
+    );
+
+    const locationField = findFirstElement(
+      tree,
+      (element) => element.props?.label === "Location" && typeof element.props?.onChange === "function"
+    );
+
+    locationField.props.onChange({ target: { value: "Davao" } });
+
+    expect(onUpdateEngineerDraft).toHaveBeenCalledWith("eng-1", "cityDraft", "Davao");
   });
 });

@@ -18,6 +18,8 @@ export const profileAuditSelect = {
   id: true,
   email: true,
   isAdmin: true,
+  firstName: true,
+  lastName: true,
   city: true,
   skills: true,
   availabilityStatus: true,

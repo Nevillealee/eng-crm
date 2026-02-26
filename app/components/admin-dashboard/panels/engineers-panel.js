@@ -30,7 +30,7 @@ export default function EngineersPanel({
   onSaveEngineerComp,
   onCancelEditComp,
 }) {
-  const cityOptions = [{ value: "all", label: "All cities" }].concat(
+  const cityOptions = [{ value: "all", label: "All locations" }].concat(
     cityFilterOptions.map((city) => ({ value: city, label: city }))
   );
   const availabilityFilterOptions = [{ value: "all", label: "All statuses" }].concat(
@@ -66,7 +66,7 @@ export default function EngineersPanel({
             onChange={(event) => onEngineerSearchChange(event.target.value)}
           />
           <FormSelectField
-            label="City"
+            label="Location"
             value={engineerCityFilter}
             onChange={(event) => onEngineerCityFilterChange(event.target.value)}
             sx={{ minWidth: { md: 220 } }}

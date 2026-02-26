@@ -51,6 +51,10 @@ function parseSignupAvatar(avatar) {
     return { error: AVATAR_INVALID_ERROR };
   }
 
+  if (parsedAvatarUrl.protocol === "http:") {
+    parsedAvatarUrl.protocol = "https:";
+  }
+
   return { avatarUrl: parsedAvatarUrl.toString() };
 }
 

@@ -28,6 +28,29 @@ export default function OnboardingStepContent({
   if (step === 1) {
     return (
       <Stack spacing={2}>
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+          <FormTextField
+            label="First name"
+            name="firstName"
+            value={form.firstName}
+            onChange={onFieldChange}
+            disabled={loading || saving}
+          />
+          <FormTextField
+            label="Last name"
+            name="lastName"
+            value={form.lastName}
+            onChange={onFieldChange}
+            disabled={loading || saving}
+          />
+        </Stack>
+        <FormTextField
+          label="Location"
+          name="city"
+          value={form.city}
+          onChange={onFieldChange}
+          disabled={loading || saving}
+        />
         <Autocomplete
           multiple
           options={engineerSkillOptions}

@@ -65,6 +65,8 @@ export default function EngineerCard({
 }) {
   const holidayItems = Array.isArray(engineer.upcomingHolidays) ? engineer.upcomingHolidays : [];
   const now = new Date();
+  const avatarSrc =
+    typeof engineer.image === "string" && engineer.image.trim() ? engineer.image.trim() : undefined;
   const engineerActiveProjects = projects.filter(
     (project) =>
       project.status !== "archived" &&
@@ -88,7 +90,7 @@ export default function EngineerCard({
             alignItems="center"
             sx={{ minWidth: 0, flex: 1 }}
           >
-            <Avatar src={engineer.image || undefined}>
+            <Avatar src={avatarSrc}>
               {(engineer.firstName || engineer.email || "U").slice(0, 1).toUpperCase()}
             </Avatar>
             <Stack sx={{ minWidth: 0, flex: 1 }}>
@@ -203,6 +205,12 @@ export default function EngineerCard({
           </Stack>
         ) : (
           <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+            <TextField
+              label="Location"
+              value={engineer.cityDraft}
+              onChange={(event) => onUpdateEngineerDraft(engineer.id, "cityDraft", event.target.value)}
+              sx={{ minWidth: { sm: 220 } }}
+            />
             <TextField
               label="Monthly salary (PHP)"
               type="number"

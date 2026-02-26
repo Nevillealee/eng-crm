@@ -2,12 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "../../../auth";
 import prisma from "../../../lib/prisma";
 import { recordProfileChangeAudits } from "./audit";
-import { deriveCityFromIp } from "./geoip";
-import {
-  deriveUpdatedCity,
-  getProfilePatchValidationError,
-  parseProfilePatchInput,
-} from "./patch-input";
+import { getProfilePatchValidationError, parseProfilePatchInput } from "./patch-input";
 import { profileAuditSelect, profileSelect } from "./selectors";
 import { toProfileDto } from "./shared";
 
@@ -66,17 +61,29 @@ export async function PATCH(request) {
       return NextResponse.json({ ok: false, error: "User not found." }, { status: 404 });
     }
 
-    const derivedCity = deriveCityFromIp(request);
-    const city = deriveUpdatedCity(
-      patchInput.hasCityUpdate,
-      patchInput.cityInput,
-      derivedCity,
-      previous.city
-    );
+    const city = patchInput.hasCityUpdate ? patchInput.cityInput || null : previous.city || null;
+    const resolvedFirstName = patchInput.firstNameUpdate.hasUpdate
+      ? patchInput.firstNameUpdate.value
+      : previous.firstName || null;
+    const resolvedLastName = patchInput.lastNameUpdate.hasUpdate
+      ? patchInput.lastNameUpdate.value
+      : previous.lastName || null;
+    const resolvedName =
+      `${resolvedFirstName || ""} ${resolvedLastName || ""}`.trim() || null;
 
     const updated = await prisma.user.update({
       where: { id: session.user.id },
       data: {
+        firstName: patchInput.firstNameUpdate.hasUpdate
+          ? patchInput.firstNameUpdate.value
+          : undefined,
+        lastName: patchInput.lastNameUpdate.hasUpdate
+          ? patchInput.lastNameUpdate.value
+          : undefined,
+        name:
+          patchInput.firstNameUpdate.hasUpdate || patchInput.lastNameUpdate.hasUpdate
+            ? resolvedName
+            : undefined,
         city,
         skills: patchInput.skills,
         availabilityStatus: patchInput.availabilityStatus,

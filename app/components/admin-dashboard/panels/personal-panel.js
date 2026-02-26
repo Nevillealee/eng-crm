@@ -58,6 +58,22 @@ export default function PersonalPanel({
                 Remove avatar
               </Button>
             </Stack>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+              <FormTextField
+                label="First name"
+                name="firstName"
+                value={profileForm.firstName}
+                onChange={onProfileFieldChange}
+                disabled={loading || profileSaving}
+              />
+              <FormTextField
+                label="Last name"
+                name="lastName"
+                value={profileForm.lastName}
+                onChange={onProfileFieldChange}
+                disabled={loading || profileSaving}
+              />
+            </Stack>
             <FormTextField
               label="City"
               name="city"

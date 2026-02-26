@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { auth } from "../../../../../auth";
 import prisma from "../../../../../lib/prisma";
 import { recordAdminAudit } from "../../../../../lib/admin-audit";
-import { ENGINEER_SALARY_NOTES_MAX_LENGTH } from "../../../../constants/text-limits";
+import {
+  ENGINEER_SALARY_NOTES_MAX_LENGTH,
+  PROFILE_CITY_MAX_LENGTH,
+} from "../../../../constants/text-limits";
 
 function parseMonthlySalaryPhp(value) {
   if (value === null || value === "") {
@@ -51,6 +54,12 @@ export async function PATCH(request, { params }) {
 
   const body = await request.json().catch(() => ({}));
   const input = body && typeof body === "object" ? body : {};
+  const hasLocationInput = typeof input.location === "string";
+  const hasCityUpdate = hasLocationInput || typeof input.city === "string";
+  const rawLocationValue = hasLocationInput ? input.location : input.city;
+  const city = hasCityUpdate
+    ? rawLocationValue.trim().slice(0, PROFILE_CITY_MAX_LENGTH)
+    : undefined;
   const hasMonthlySalaryPhp = Object.prototype.hasOwnProperty.call(input, "monthlySalaryPhp");
   const hasSalaryNotes = typeof input.salaryNotes === "string";
   const monthlySalaryPhp = hasMonthlySalaryPhp
@@ -78,6 +87,7 @@ export async function PATCH(request, { params }) {
       id: true,
       email: true,
       isAdmin: true,
+      city: true,
       monthlySalaryPhp: true,
       salaryNotes: true,
     },
@@ -91,6 +101,9 @@ export async function PATCH(request, { params }) {
     monthlySalaryPhp,
     salaryNotes: hasSalaryNotes ? salaryNotes || null : undefined,
   };
+  if (hasCityUpdate) {
+    updateData.city = city || null;
+  }
 
   const engineer = await prisma.user.update({
     where: { id: engineerId },
@@ -98,33 +111,38 @@ export async function PATCH(request, { params }) {
     select: {
       id: true,
       email: true,
+      city: true,
       monthlySalaryPhp: true,
       salaryNotes: true,
       updatedAt: true,
     },
   });
 
+  const cityChanged = (previousEngineer.city || "") !== (engineer.city || "");
   const salaryChanged = previousEngineer.monthlySalaryPhp !== engineer.monthlySalaryPhp;
   const notesChanged = (previousEngineer.salaryNotes || "") !== (engineer.salaryNotes || "");
 
-  if (salaryChanged || notesChanged) {
+  if (cityChanged || salaryChanged || notesChanged) {
     await recordAdminAudit({
       actorUserId: session.user.id,
       actorEmail: session.user.email,
       action: "engineer.compensation.updated",
       targetType: "user",
       targetId: engineer.email,
-      summary: `Updated compensation for ${engineer.email}.`,
+      summary: `Updated engineer details for ${engineer.email}.`,
       metadata: {
         changedFields: {
+          city: cityChanged,
           monthlySalaryPhp: salaryChanged,
           salaryNotes: notesChanged,
         },
         before: {
+          city: previousEngineer.city || null,
           monthlySalaryPhp: previousEngineer.monthlySalaryPhp,
           salaryNotes: previousEngineer.salaryNotes || null,
         },
         after: {
+          city: engineer.city || null,
           monthlySalaryPhp: engineer.monthlySalaryPhp,
           salaryNotes: engineer.salaryNotes || null,
         },

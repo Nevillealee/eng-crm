@@ -21,6 +21,9 @@ export default function EngineerAccount() {
   const [avatarDirty, setAvatarDirty] = useState(false);
   const [avatarRemoved, setAvatarRemoved] = useState(false);
   const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    city: "",
     skills: [],
     availabilityStatus: "available",
     availabilityNote: "",
@@ -47,6 +50,9 @@ export default function EngineerAccount() {
         const holidays = Array.isArray(profile.upcomingHolidays) ? profile.upcomingHolidays : [];
 
         setForm({
+          firstName: typeof profile.firstName === "string" ? profile.firstName : "",
+          lastName: typeof profile.lastName === "string" ? profile.lastName : "",
+          city: typeof profile.city === "string" ? profile.city : "",
           skills: Array.isArray(profile.skills)
             ? profile.skills.filter((skill) => skillOptionSet.has(skill))
             : [],
@@ -164,6 +170,9 @@ export default function EngineerAccount() {
 
     try {
       const payloadBody = {
+        firstName: form.firstName,
+        lastName: form.lastName,
+        city: form.city,
         skills: form.skills,
         availabilityStatus: form.availabilityStatus,
         availabilityNote: form.availabilityNote,

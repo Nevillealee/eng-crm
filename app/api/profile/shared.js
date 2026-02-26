@@ -41,6 +41,10 @@ function normalizeAvatarUrl(avatar) {
     return { error: AVATAR_INVALID_ERROR };
   }
 
+  if (parsed.protocol === "http:") {
+    parsed.protocol = "https:";
+  }
+
   return { avatarUrl: parsed.toString() };
 }
 
