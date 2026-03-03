@@ -7,9 +7,13 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
+    "db:seed": "node --experimental-strip-types prisma/seed-users.js",
     "lint": "eslint",
     "test": "jest --runInBand",
     "test:watch": "jest --watch"
+  },
+  "prisma": {
+    "seed": "node --experimental-strip-types prisma/seed-users.js"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.7.2",
