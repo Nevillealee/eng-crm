@@ -482,4 +482,200 @@ describe("Given graceful API error handling", () => {
       error: "Unable to delete project right now. Please try again later.",
     });
   });
+
+  it("When task listing throws, then GET /api/tasks returns a safe server error", async () => {
+    jest.resetModules();
+
+    jest.doMock("../../../auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: "admin-8", role: "admin", email: "admin8@example.com" },
+      }),
+    }));
+    jest.doMock("../../../lib/prisma", () => ({
+      __esModule: true,
+      default: {
+        task: { findMany: jest.fn().mockRejectedValue(new Error("db unavailable")) },
+      },
+    }));
+    jest.doMock("../../../lib/admin-audit", () => ({
+      recordAdminAudit: jest.fn(),
+    }));
+
+    const { GET } = await import("../../../app/api/tasks/route.js");
+    const response = await GET();
+    const payload = await readJson(response);
+
+    expect(response.status).toBe(500);
+    expect(payload).toEqual({
+      ok: false,
+      error: "Unable to load tasks right now. Please try again later.",
+    });
+  });
+
+  it("When task creation throws, then POST /api/tasks returns a safe server error", async () => {
+    jest.resetModules();
+
+    jest.doMock("../../../auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: "admin-9", role: "admin", email: "admin9@example.com" },
+      }),
+    }));
+    jest.doMock("../../../lib/prisma", () => ({
+      __esModule: true,
+      default: {
+        project: {
+          findUnique: jest.fn().mockResolvedValue({
+            id: "proj-1",
+            memberships: [{ userId: "eng-1" }],
+          }),
+        },
+        user: {
+          findUnique: jest.fn().mockResolvedValue({ id: "eng-1", isAdmin: false }),
+        },
+        task: {
+          create: jest.fn().mockRejectedValue(new Error("db unavailable")),
+        },
+      },
+    }));
+    jest.doMock("../../../lib/admin-audit", () => ({
+      recordAdminAudit: jest.fn(),
+    }));
+
+    const { POST } = await import("../../../app/api/tasks/route.js");
+    const response = await POST(
+      jsonRequest("http://localhost/api/tasks", "POST", {
+        projectId: "proj-1",
+        name: "Release notes",
+        assigneeId: "eng-1",
+      })
+    );
+    const payload = await readJson(response);
+
+    expect(response.status).toBe(500);
+    expect(payload).toEqual({
+      ok: false,
+      error: "Unable to create task right now. Please try again later.",
+    });
+  });
+
+  it("When task updates throw unexpectedly, then PATCH /api/tasks/[taskId] returns a safe server error", async () => {
+    jest.resetModules();
+
+    jest.doMock("../../../auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: "admin-10", role: "admin", email: "admin10@example.com" },
+      }),
+    }));
+    jest.doMock("../../../lib/prisma", () => ({
+      __esModule: true,
+      default: {
+        task: {
+          findFirst: jest.fn().mockResolvedValue({
+            id: "task-1",
+            projectId: "proj-1",
+            parentTaskId: null,
+            name: "Release notes",
+            assigneeId: "eng-1",
+            assignedById: "admin-10",
+            createdByUserId: "admin-10",
+            completedAt: null,
+            completedById: null,
+            completed: false,
+            approvalStatus: "pending",
+            dueOn: null,
+            notes: "",
+            resourceType: "task",
+            createdAt: new Date("2026-03-01T00:00:00.000Z"),
+            updatedAt: new Date("2026-03-01T00:00:00.000Z"),
+            project: {
+              id: "proj-1",
+              name: "Phoenix",
+              clientName: "Client Inc",
+              status: "ongoing",
+              memberships: [{ userId: "eng-1" }],
+            },
+            assignee: {
+              id: "eng-1",
+              email: "eng1@example.com",
+              firstName: "Eng",
+              lastName: "One",
+              name: "Eng One",
+            },
+            assignedBy: {
+              id: "admin-10",
+              email: "admin10@example.com",
+              firstName: "Admin",
+              lastName: "User",
+              name: "Admin User",
+            },
+            createdByUser: {
+              id: "admin-10",
+              email: "admin10@example.com",
+              firstName: "Admin",
+              lastName: "User",
+              name: "Admin User",
+            },
+            completedBy: null,
+            parentTask: null,
+          }),
+          update: jest.fn().mockRejectedValue(new Error("db unavailable")),
+        },
+        user: {
+          findUnique: jest.fn().mockResolvedValue({ id: "eng-1", isAdmin: false }),
+        },
+      },
+    }));
+    jest.doMock("../../../lib/admin-audit", () => ({
+      recordAdminAudit: jest.fn(),
+    }));
+
+    const { PATCH } = await import("../../../app/api/tasks/[taskId]/route.js");
+    const response = await PATCH(
+      jsonRequest("http://localhost/api/tasks/task-1", "PATCH", {
+        name: "Updated release notes",
+      }),
+      { params: Promise.resolve({ taskId: "task-1" }) }
+    );
+    const payload = await readJson(response);
+
+    expect(response.status).toBe(500);
+    expect(payload).toEqual({
+      ok: false,
+      error: "Unable to update task right now. Please try again later.",
+    });
+  });
+
+  it("When task deletion throws unexpectedly, then DELETE /api/tasks/[taskId] returns a safe server error", async () => {
+    jest.resetModules();
+
+    jest.doMock("../../../auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: "admin-11", role: "admin", email: "admin11@example.com" },
+      }),
+    }));
+    jest.doMock("../../../lib/prisma", () => ({
+      __esModule: true,
+      default: {
+        task: {
+          findFirst: jest.fn().mockRejectedValue(new Error("db unavailable")),
+          delete: jest.fn(),
+        },
+      },
+    }));
+    jest.doMock("../../../lib/admin-audit", () => ({
+      recordAdminAudit: jest.fn(),
+    }));
+
+    const { DELETE } = await import("../../../app/api/tasks/[taskId]/route.js");
+    const response = await DELETE(new Request("http://localhost/api/tasks/task-1"), {
+      params: Promise.resolve({ taskId: "task-1" }),
+    });
+    const payload = await readJson(response);
+
+    expect(response.status).toBe(500);
+    expect(payload).toEqual({
+      ok: false,
+      error: "Unable to delete task right now. Please try again later.",
+    });
+  });
 });

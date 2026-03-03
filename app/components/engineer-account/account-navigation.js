@@ -36,6 +36,14 @@ export default function AccountNavigation({ activePanel, saving, onSelectPanel, 
         >
           Projects
         </Button>
+        <Button
+          type="button"
+          variant={activePanel === "tasks" ? "contained" : "text"}
+          onClick={() => onSelectPanel("tasks")}
+          disabled={saving}
+        >
+          Tasks
+        </Button>
         <Box sx={{ flexGrow: 1 }} />
         <Button type="button" variant="outlined" onClick={onSignOut}>
           Sign out

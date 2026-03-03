@@ -25,6 +25,7 @@ export default function EngineersPanel({
   onToggleHoliday,
   onToggleProjects,
   onProjectClick,
+  onViewTasks,
   onBeginEditComp,
   onUpdateEngineerDraft,
   onSaveEngineerComp,
@@ -99,6 +100,7 @@ export default function EngineersPanel({
             onToggleHoliday={() => onToggleHoliday(engineer.id)}
             onToggleProjects={() => onToggleProjects(engineer.id)}
             onProjectClick={onProjectClick}
+            onViewTasks={onViewTasks}
             onBeginEditComp={() => onBeginEditComp(engineer.id)}
             onUpdateEngineerDraft={onUpdateEngineerDraft}
             onSaveEngineerComp={() => onSaveEngineerComp(engineer.id)}

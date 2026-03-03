@@ -3,6 +3,7 @@ export const navigationItems = [
   { id: "engineers", label: "Engineers" },
   { id: "personal", label: "Personal information" },
   { id: "projects", label: "Projects" },
+  { id: "tasks", label: "Tasks" },
   { id: "audit", label: "Audit log" },
 ];
 

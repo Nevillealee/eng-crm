@@ -37,6 +37,7 @@ export default function ProjectList({
   onEdit,
   onArchive,
   onDelete,
+  onViewTasks,
   showArchiveButton = true,
   showDeleteButton = false,
   showEditButton = true,
@@ -136,6 +137,11 @@ export default function ProjectList({
                 spacing={1}
                 justifyContent={{ sm: "flex-end" }}
               >
+                {onViewTasks ? (
+                  <Button type="button" variant="outlined" onClick={() => onViewTasks(project)} disabled={saving}>
+                    Tasks
+                  </Button>
+                ) : null}
                 {showEditButton ? (
                   <Button
                     type="button"

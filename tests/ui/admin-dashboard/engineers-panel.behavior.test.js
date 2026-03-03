@@ -22,6 +22,7 @@ function buildProps(overrides = {}) {
     onToggleHoliday: jest.fn(),
     onToggleProjects: jest.fn(),
     onProjectClick: jest.fn(),
+    onViewTasks: jest.fn(),
     onBeginEditComp: jest.fn(),
     onUpdateEngineerDraft: jest.fn(),
     onSaveEngineerComp: jest.fn(),

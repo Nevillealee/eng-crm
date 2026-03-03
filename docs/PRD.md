@@ -45,12 +45,19 @@ MVP focus:
 
 - Can edit: `skills`, `city`, `avatar`, `availability`, and time off/holidays.
 - Can view assigned projects (no admin notes).
+- Can create self-assigned project tasks.
+- Can read/update/delete tasks when they created the task or are the current assignee.
+- Cannot assign tasks to another user.
+- Cannot approve or reject tasks in MVP.
 
 ### Admin permissions
 
 - Can view and edit all engineer profile fields.
 - Can edit salary (PHP monthly salary).
 - Can create/edit/archive projects and assign/unassign engineers.
+- Can create/edit/delete any task.
+- Can assign or reassign tasks to engineers.
+- Can approve/reject tasks and complete tasks on behalf of engineers.
 - Can view last login IP and other audit-relevant fields.
 
 ## 6) Functional requirements (MVP)
@@ -89,7 +96,28 @@ Fields (engineer-editable and admin-editable):
   - Project name, client name, duration (start/end), assigned team members
   - Any engineer-visible notes (MVP: none; admin notes are not visible)
 
-### 6.4 Admin dashboard
+### 6.4 Engineer tasks view
+
+- A `Tasks` section is available in the engineer side panel.
+- Engineers can create tasks only for projects they are assigned to.
+- Engineers can filter their visible tasks by project, completion state, approval status, due bucket, and task name.
+- Engineers can open the task view from the existing projects panel with the project filter preselected.
+- Every task is project-scoped and includes:
+  - `id`
+  - `project_id`
+  - `name`
+  - `assignee`
+  - `assigned_by`
+  - `completed_at`
+  - `completed_by`
+  - `completed`
+  - `approval_status` (`pending` | `approved` | `rejected`)
+  - `due_on`
+  - `notes`
+  - `resource_type` (`task`)
+  - `parent` object
+
+### 6.5 Admin dashboard
 
 Admin can view a list of all engineers including:
 - Salary information (admin-entered): monthly salary in PHP
@@ -108,6 +136,23 @@ Admin can create/manage projects including:
 - Status (`Ongoing`, `Completed`, `Archived`)
 - Team members assigned
 - Admin notes (admin-only)
+
+Admin can create/manage tasks including:
+- Task name
+- Project
+- Assignee
+- Due date
+- Notes
+- Parent task (optional)
+- Completion state
+- Approval status
+
+Admin task workflows:
+- A dedicated `Tasks` view exists in the admin dashboard.
+- Admin can navigate to Tasks directly from dashboard navigation.
+- Admin can open Tasks from the Projects view or from an individual project card with the project filter pre-applied.
+- Admin can open Tasks from the Engineers view to see all tasks assigned to a selected engineer.
+- Admin task filtering supports project, assignee, approval status, completion state, due bucket, and task name search.
 
 ## 7) Data model (logical)
 
@@ -138,6 +183,25 @@ Admin can create/manage projects including:
 - Optional `roleOnProject`
 - `assignedAt`
 
+### Task
+
+- `id`
+- `projectId`
+- `parentTaskId` (nullable)
+- `name`
+- `assigneeUserId`
+- `assignedByUserId`
+- `createdByUserId`
+- `completedAt` (nullable)
+- `completedByUserId` (nullable)
+- `completed`: boolean
+- `approvalStatus`: `pending` | `approved` | `rejected`
+- `dueOn` (nullable)
+- `notes` (nullable)
+- `resourceType`: fixed `task`
+- `createdAt`, `updatedAt`
+- `parent`: derived API object that resolves to the parent task or owning project
+
 ## 8) UX / pages (MVP)
 
 Public:
@@ -148,7 +212,7 @@ Public:
 Engineer:
 - `/engineer` (required onboarding wizard until completion)
 - `/engineer/account` (engineer account page after onboarding)
-- `/projects` (My Projects)
+- `Projects` and `Tasks` are separate panels within `/engineer/account`
 - `/profile`
 
 Admin:
@@ -172,4 +236,7 @@ Admin:
 - Engineers cannot access `/engineer/account` until onboarding is completed.
 - Engineer can update skills/city/avatar/availability and admin sees the updates.
 - Admin can create an ongoing project and assign engineers; engineers see assigned projects.
+- Engineers can create self-assigned tasks for projects they belong to and manage tasks they created or are assigned to.
+- Engineers cannot assign tasks to other users and cannot approve/reject tasks.
+- Admin can manage all tasks, assign tasks to engineers, and open filtered task lists from Projects and Engineers views.
 - Admin notes are only visible to admins.

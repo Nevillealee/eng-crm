@@ -28,6 +28,7 @@ function buildProps(overrides = {}) {
     onToggleHoliday: jest.fn(),
     onToggleProjects: jest.fn(),
     onProjectClick: jest.fn(),
+    onViewTasks: jest.fn(),
     onBeginEditComp: jest.fn(),
     onUpdateEngineerDraft: jest.fn(),
     onSaveEngineerComp: jest.fn(),
@@ -81,5 +82,19 @@ describe("Given an engineer card in the admin dashboard", () => {
     locationField.props.onChange({ target: { value: "Davao" } });
 
     expect(onUpdateEngineerDraft).toHaveBeenCalledWith("eng-1", "cityDraft", "Davao");
+  });
+
+  it("When tasks is clicked, then the view-tasks callback receives the engineer id", () => {
+    const onViewTasks = jest.fn();
+    const tree = EngineerCard(buildProps({ onViewTasks }));
+
+    const tasksButton = findFirstElement(
+      tree,
+      (element) => typeof element.props?.onClick === "function" && element.props?.children === "Tasks"
+    );
+
+    tasksButton.props.onClick();
+
+    expect(onViewTasks).toHaveBeenCalledWith("eng-1");
   });
 });

@@ -39,6 +39,10 @@ model User {
   monthlySalaryPhp Int?   @map("monthly_salary_php")
   salaryNotes   String?   @map("salary_notes")
   projectMemberships ProjectMembership[]
+  tasksAssigned Task[] @relation("TaskAssignee")
+  tasksAssignedBy Task[] @relation("TaskAssignedBy")
+  tasksCreated Task[] @relation("TaskCreatedBy")
+  tasksCompleted Task[] @relation("TaskCompletedBy")
   accounts      Account[]
   sessions      Session[]
   adminAuditLogs AdminAuditLog[]
@@ -50,6 +54,12 @@ enum ProjectStatus {
   ongoing
   completed
   archived
+}
+
+enum TaskApprovalStatus {
+  pending
+  approved
+  rejected
 }
 
 model Project {
@@ -65,6 +75,7 @@ model Project {
   createdAt   DateTime            @default(now()) @map("created_at")
   updatedAt   DateTime            @updatedAt @map("updated_at")
   memberships ProjectMembership[]
+  tasks       Task[]
 
   @@map("projects")
 }
@@ -80,6 +91,41 @@ model ProjectMembership {
   @@id([projectId, userId])
   @@index([userId])
   @@map("project_memberships")
+}
+
+model Task {
+  id              String             @id @default(cuid())
+  projectId       String             @map("project_id")
+  parentTaskId    String?            @map("parent_task_id")
+  name            String
+  assigneeId      String             @map("assignee")
+  assignedById    String             @map("assigned_by")
+  createdByUserId String             @map("created_by_user_id")
+  completedAt     DateTime?          @map("completed_at")
+  completedById   String?            @map("completed_by")
+  completed       Boolean            @default(false)
+  approvalStatus  TaskApprovalStatus @default(pending) @map("approval_status")
+  dueOn           DateTime?          @map("due_on")
+  notes           String?
+  resourceType    String             @default("task") @map("resource_type")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+  project         Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignee        User               @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  assignedBy      User               @relation("TaskAssignedBy", fields: [assignedById], references: [id])
+  createdByUser   User               @relation("TaskCreatedBy", fields: [createdByUserId], references: [id])
+  completedBy     User?              @relation("TaskCompletedBy", fields: [completedById], references: [id], onDelete: SetNull)
+  parentTask      Task?              @relation("TaskParent", fields: [parentTaskId], references: [id], onDelete: SetNull)
+  childTasks      Task[]             @relation("TaskParent")
+
+  @@index([projectId])
+  @@index([assigneeId])
+  @@index([createdByUserId])
+  @@index([approvalStatus])
+  @@index([completed])
+  @@index([dueOn])
+  @@index([parentTaskId])
+  @@map("tasks")
 }
 
 model Account {

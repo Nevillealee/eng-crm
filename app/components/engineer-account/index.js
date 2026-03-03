@@ -8,15 +8,49 @@ import AccountNavigation from "./account-navigation";
 import { formatDateLabel } from "./formatters";
 import PersonalPanel from "./personal-panel";
 import ProjectsPanel from "./projects-panel";
+import TasksPanel from "./tasks-panel";
+import { filterTasks, sortTasks } from "../tasks/shared";
+
+function emptyTaskForm(projectId = "") {
+  return {
+    projectId,
+    name: "",
+    dueOn: "",
+    notes: "",
+    parentTaskId: "",
+  };
+}
+
+function toDateInputValue(value) {
+  if (!value) {
+    return "";
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return "";
+  }
+
+  return parsed.toISOString().slice(0, 10);
+}
 
 export default function EngineerAccount() {
   const [activePanel, setActivePanel] = useState("personal");
   const [loading, setLoading] = useState(true);
   const [projectsLoading, setProjectsLoading] = useState(true);
+  const [tasksLoading, setTasksLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [projects, setProjects] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [editingTaskId, setEditingTaskId] = useState("");
+  const [taskForm, setTaskForm] = useState(emptyTaskForm());
+  const [taskProjectFilter, setTaskProjectFilter] = useState("all");
+  const [taskApprovalFilter, setTaskApprovalFilter] = useState("all");
+  const [taskCompletionFilter, setTaskCompletionFilter] = useState("all");
+  const [taskDueFilter, setTaskDueFilter] = useState("all");
+  const [taskSearch, setTaskSearch] = useState("");
   const [avatarPreview, setAvatarPreview] = useState("");
   const [avatarDirty, setAvatarDirty] = useState(false);
   const [avatarRemoved, setAvatarRemoved] = useState(false);
@@ -99,8 +133,34 @@ export default function EngineerAccount() {
       }
     }
 
+    async function loadTasks() {
+      try {
+        const response = await fetch("/api/tasks");
+        const payload = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(payload?.error || "Unable to load tasks.");
+        }
+
+        if (!mounted) {
+          return;
+        }
+
+        setTasks(Array.isArray(payload?.tasks) ? payload.tasks : []);
+      } catch (loadError) {
+        if (mounted) {
+          setError(loadError.message || "Unable to load tasks.");
+        }
+      } finally {
+        if (mounted) {
+          setTasksLoading(false);
+        }
+      }
+    }
+
     loadProfile();
     loadProjects();
+    loadTasks();
 
     return () => {
       mounted = false;
@@ -162,6 +222,145 @@ export default function EngineerAccount() {
     });
   };
 
+  const resetTaskForm = (projectId = taskProjectFilter) => {
+    setEditingTaskId("");
+    setTaskForm(emptyTaskForm(projectId === "all" ? "" : projectId || ""));
+  };
+
+  const handleTaskFieldChange = (event) => {
+    const { name, value } = event.target;
+    setTaskForm((prev) => ({
+      ...prev,
+      [name]: value,
+      ...(name === "projectId" ? { parentTaskId: "" } : {}),
+    }));
+  };
+
+  const openTasksPanel = (projectId = "all") => {
+    const nextProjectFilter = projectId || "all";
+    setActivePanel("tasks");
+    setTaskProjectFilter(nextProjectFilter);
+    setTaskApprovalFilter("all");
+    setTaskCompletionFilter("all");
+    setTaskDueFilter("all");
+    setTaskSearch("");
+    setError("");
+    setInfo("");
+    resetTaskForm(nextProjectFilter);
+  };
+
+  const beginEditTask = (task) => {
+    setActivePanel("tasks");
+    setEditingTaskId(task.id);
+    setTaskForm({
+      projectId: task.projectId || "",
+      name: task.name || "",
+      dueOn: toDateInputValue(task.dueOn),
+      notes: task.notes || "",
+      parentTaskId: task.parentTaskId || "",
+    });
+    setError("");
+    setInfo(`Editing task: ${task.name || "Untitled"}`);
+  };
+
+  const submitTask = async (event) => {
+    event.preventDefault();
+    setError("");
+    setInfo("");
+    setSaving(true);
+
+    const isEditing = Boolean(editingTaskId);
+    const formProjectId = taskForm.projectId || (taskProjectFilter !== "all" ? taskProjectFilter : "");
+
+    try {
+      const response = await fetch(isEditing ? `/api/tasks/${editingTaskId}` : "/api/tasks", {
+        method: isEditing ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: formProjectId,
+          name: taskForm.name,
+          dueOn: taskForm.dueOn || null,
+          notes: taskForm.notes,
+          parentTaskId: taskForm.parentTaskId || null,
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload?.error || "Unable to save task.");
+      }
+
+      const task = payload?.task;
+      if (task) {
+        setTasks((prev) => {
+          const next = prev.filter((item) => item.id !== task.id);
+          return [task, ...next];
+        });
+      }
+
+      setInfo(isEditing ? "Task updated." : "Task created.");
+      resetTaskForm(taskProjectFilter !== "all" ? taskProjectFilter : formProjectId);
+    } catch (saveError) {
+      setError(saveError.message || "Unable to save task.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteTask = async (taskId) => {
+    setError("");
+    setInfo("");
+    setSaving(true);
+
+    try {
+      const response = await fetch(`/api/tasks/${taskId}`, { method: "DELETE" });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload?.error || "Unable to delete task.");
+      }
+
+      setTasks((prev) => prev.filter((task) => task.id !== taskId));
+      if (editingTaskId === taskId) {
+        resetTaskForm();
+      }
+      setInfo("Task deleted.");
+    } catch (deleteError) {
+      setError(deleteError.message || "Unable to delete task.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleTaskCompleted = async (task) => {
+    setError("");
+    setInfo("");
+    setSaving(true);
+
+    try {
+      const response = await fetch(`/api/tasks/${task.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ completed: !task.completed }),
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload?.error || "Unable to update task.");
+      }
+
+      const updatedTask = payload?.task;
+      if (updatedTask) {
+        setTasks((prev) => prev.map((item) => (item.id === updatedTask.id ? updatedTask : item)));
+      }
+      setInfo(task.completed ? "Task reopened." : "Task completed.");
+    } catch (saveError) {
+      setError(saveError.message || "Unable to update task.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleSaveProfile = async (event) => {
     event.preventDefault();
     setError("");
@@ -212,6 +411,42 @@ export default function EngineerAccount() {
   const handleSignOut = async () => {
     await signOut({ redirectTo: "/login" });
   };
+
+  const engineerProjectOptions = (() => {
+    const byId = new Map();
+    projects.forEach((project) => {
+      if (project?.id) {
+        byId.set(project.id, { id: project.id, name: project.name || project.id });
+      }
+    });
+    tasks.forEach((task) => {
+      if (task?.project?.id) {
+        byId.set(task.project.id, { id: task.project.id, name: task.project.name || task.project.id });
+      }
+    });
+    return [...byId.values()].sort((left, right) => left.name.localeCompare(right.name));
+  })();
+
+  const taskParentOptions = (() => {
+    if (!taskForm.projectId) {
+      return [];
+    }
+
+    return tasks
+      .filter((task) => task.projectId === taskForm.projectId && task.id !== editingTaskId)
+      .sort((left, right) => left.name.localeCompare(right.name));
+  })();
+
+  const filteredTasks = sortTasks(
+    filterTasks({
+      tasks,
+      projectId: taskProjectFilter,
+      approvalStatus: taskApprovalFilter,
+      completion: taskCompletionFilter,
+      due: taskDueFilter,
+      query: taskSearch,
+    })
+  );
 
   return (
     <Box
@@ -265,6 +500,36 @@ export default function EngineerAccount() {
                   projectsLoading={projectsLoading}
                   projects={projects}
                   formatDateLabel={formatDateLabel}
+                  onOpenTasks={openTasksPanel}
+                />
+              ) : null}
+
+              {activePanel === "tasks" ? (
+                <TasksPanel
+                  saving={saving}
+                  tasksLoading={tasksLoading}
+                  taskForm={taskForm}
+                  projectOptions={engineerProjectOptions}
+                  filterProjectOptions={engineerProjectOptions}
+                  parentTaskOptions={taskParentOptions}
+                  filteredTasks={filteredTasks}
+                  editingTaskId={editingTaskId}
+                  taskProjectFilter={taskProjectFilter}
+                  taskApprovalFilter={taskApprovalFilter}
+                  taskCompletionFilter={taskCompletionFilter}
+                  taskDueFilter={taskDueFilter}
+                  taskSearch={taskSearch}
+                  onTaskFieldChange={handleTaskFieldChange}
+                  onSubmitTask={submitTask}
+                  onEditTask={beginEditTask}
+                  onDeleteTask={deleteTask}
+                  onToggleTaskCompleted={toggleTaskCompleted}
+                  onTaskProjectFilterChange={setTaskProjectFilter}
+                  onTaskApprovalFilterChange={setTaskApprovalFilter}
+                  onTaskCompletionFilterChange={setTaskCompletionFilter}
+                  onTaskDueFilterChange={setTaskDueFilter}
+                  onTaskSearchChange={setTaskSearch}
+                  onResetTaskForm={() => resetTaskForm()}
                 />
               ) : null}
             </Stack>

@@ -32,6 +32,7 @@ export default function ProjectsPanel({
   onSortByChange,
   onSortDirectionChange,
   onEditProject,
+  onOpenProjectTasks,
   onArchiveProject,
   onDeleteProject,
   onResetProjectForm,
@@ -51,9 +52,12 @@ export default function ProjectsPanel({
               <Button
                 type="button"
                 variant="outlined"
-                onClick={() => onExportCsv("/api/admin/export/projects")}
+                onClick={() => onOpenProjectTasks?.()}
                 disabled={loading || saving}
               >
+                Open tasks
+              </Button>
+              <Button type="button" variant="outlined" onClick={() => onExportCsv("/api/admin/export/projects")} disabled={loading || saving}>
                 Export CSV
               </Button>
               {!showCreateProjectForm ? (
@@ -117,6 +121,7 @@ export default function ProjectsPanel({
         projects={sortedActiveProjects}
         saving={saving}
         onEdit={onEditProject}
+        onViewTasks={onOpenProjectTasks}
         onArchive={onArchiveProject}
         loading={loading}
         editingProjectId={editingProjectId}
@@ -137,6 +142,7 @@ export default function ProjectsPanel({
         projects={sortedArchivedProjects}
         saving={saving}
         onEdit={onEditProject}
+        onViewTasks={onOpenProjectTasks}
         onArchive={onArchiveProject}
         showArchiveButton={false}
         showEditButton={false}

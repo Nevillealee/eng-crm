@@ -10,9 +10,11 @@ import DashboardPanel from "./panels/dashboard-panel";
 import EngineersPanel from "./panels/engineers-panel";
 import PersonalPanel from "./panels/personal-panel";
 import ProjectsPanel from "./panels/projects-panel";
+import TasksPanel from "./panels/tasks-panel";
 import { filterEngineers } from "./shared/engineer-filters";
 import AdminDashboardNavigation from "./shared/navigation";
 import OverviewCards from "./shared/overview-cards";
+import { filterTasks, sortTasks, taskUserLabel } from "../tasks/shared";
 
 function engineerDisplayName(engineer) {
   if (!engineer || typeof engineer !== "object") {
@@ -54,6 +56,19 @@ function emptyProjectForm() {
   };
 }
 
+function emptyTaskForm(projectId = "", assigneeId = "") {
+  return {
+    projectId,
+    name: "",
+    assigneeId,
+    dueOn: "",
+    notes: "",
+    parentTaskId: "",
+    completed: false,
+    approvalStatus: "pending",
+  };
+}
+
 function withEngineerDrafts(engineers) {
   return engineers.map((engineer) => ({
     ...engineer,
@@ -75,11 +90,21 @@ export default function AdminDashboard({ session }) {
   const [info, setInfo] = useState("");
   const [engineers, setEngineers] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [tasks, setTasks] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
   const [auditActionFilter, setAuditActionFilter] = useState("all");
   const [editingProjectId, setEditingProjectId] = useState("");
   const [showCreateProjectForm, setShowCreateProjectForm] = useState(false);
   const [projectForm, setProjectForm] = useState(emptyProjectForm());
+  const [showCreateTaskForm, setShowCreateTaskForm] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState("");
+  const [taskForm, setTaskForm] = useState(emptyTaskForm("", session?.user?.id || ""));
+  const [taskProjectFilter, setTaskProjectFilter] = useState("all");
+  const [taskAssigneeFilter, setTaskAssigneeFilter] = useState("all");
+  const [taskApprovalFilter, setTaskApprovalFilter] = useState("all");
+  const [taskCompletionFilter, setTaskCompletionFilter] = useState("all");
+  const [taskDueFilter, setTaskDueFilter] = useState("all");
+  const [taskSearch, setTaskSearch] = useState("");
   const [engineerSearch, setEngineerSearch] = useState("");
   const [engineerCityFilter, setEngineerCityFilter] = useState("all");
   const [engineerAvailabilityFilter, setEngineerAvailabilityFilter] = useState("all");
@@ -177,6 +202,115 @@ export default function AdminDashboard({ session }) {
     [archivedProjects]
   );
 
+  const taskProjectOptions = useMemo(() => {
+    return [...projects]
+      .map((project) => ({
+        id: project.id,
+        name: project.name || project.id,
+      }))
+      .sort((left, right) => left.name.localeCompare(right.name));
+  }, [projects]);
+
+  const taskFilterAssigneeOptions = useMemo(() => {
+    const byId = new Map();
+
+    if (session?.user?.id) {
+      byId.set(session.user.id, {
+        id: session.user.id,
+        name: session.user.name || session.user.email || "Me",
+      });
+    }
+
+    engineers.forEach((engineer) => {
+      byId.set(engineer.id, {
+        id: engineer.id,
+        name: engineerDisplayName(engineer),
+      });
+    });
+
+    tasks.forEach((task) => {
+      if (task?.assignee) {
+        byId.set(task.assignee, {
+          id: task.assignee,
+          name: taskUserLabel(task.assigneeUser, task.assignee),
+        });
+      }
+    });
+
+    return [...byId.values()].sort((left, right) => left.name.localeCompare(right.name));
+  }, [engineers, session, tasks]);
+
+  const taskAssigneeOptions = useMemo(() => {
+    const byId = new Map();
+
+    if (session?.user?.id) {
+      byId.set(session.user.id, {
+        id: session.user.id,
+        name: session.user.name || session.user.email || "Me",
+      });
+    }
+
+    const selectedProject = projects.find((project) => project.id === taskForm.projectId);
+    if (Array.isArray(selectedProject?.teamMembers)) {
+      selectedProject.teamMembers.forEach((member) => {
+        byId.set(member.id, {
+          id: member.id,
+          name: member.name || member.email || member.id,
+        });
+      });
+    }
+
+    if (taskForm.assigneeId && !byId.has(taskForm.assigneeId)) {
+      const fallbackTask = tasks.find((task) => task.assignee === taskForm.assigneeId);
+      byId.set(taskForm.assigneeId, {
+        id: taskForm.assigneeId,
+        name: taskUserLabel(fallbackTask?.assigneeUser, taskForm.assigneeId),
+      });
+    }
+
+    return [...byId.values()].sort((left, right) => {
+      if (left.id === session?.user?.id) {
+        return -1;
+      }
+      if (right.id === session?.user?.id) {
+        return 1;
+      }
+      return left.name.localeCompare(right.name);
+    });
+  }, [projects, session, taskForm.assigneeId, taskForm.projectId, tasks]);
+
+  const taskParentOptions = useMemo(() => {
+    if (!taskForm.projectId) {
+      return [];
+    }
+
+    return tasks
+      .filter((task) => task.projectId === taskForm.projectId && task.id !== editingTaskId)
+      .sort((left, right) => left.name.localeCompare(right.name));
+  }, [editingTaskId, taskForm.projectId, tasks]);
+
+  const filteredTasks = useMemo(() => {
+    return sortTasks(
+      filterTasks({
+        tasks,
+        projectId: taskProjectFilter,
+        assigneeId: taskAssigneeFilter,
+        approvalStatus: taskApprovalFilter,
+        completion: taskCompletionFilter,
+        due: taskDueFilter,
+        query: taskSearch,
+      })
+    );
+  }, [
+    taskApprovalFilter,
+    taskAssigneeFilter,
+    taskCompletionFilter,
+    taskDueFilter,
+    taskProjectFilter,
+    taskSearch,
+    tasks,
+  ]);
+
   const auditActionOptions = useMemo(() => {
     const actions = [...new Set(auditLogs.map((entry) => entry.action).filter(Boolean))];
     return actions.sort((left, right) => left.localeCompare(right));
@@ -196,15 +330,17 @@ export default function AdminDashboard({ session }) {
       setError("");
 
       try {
-        const [engineerResponse, projectsResponse, profileResponse, auditLogResponse] = await Promise.all([
+        const [engineerResponse, projectsResponse, tasksResponse, profileResponse, auditLogResponse] = await Promise.all([
           fetch("/api/admin/engineers"),
           fetch("/api/projects"),
+          fetch("/api/tasks"),
           fetch("/api/profile"),
           fetch("/api/admin/audit-logs?limit=100"),
         ]);
 
         const engineerPayload = await engineerResponse.json().catch(() => ({}));
         const projectsPayload = await projectsResponse.json().catch(() => ({}));
+        const tasksPayload = await tasksResponse.json().catch(() => ({}));
         const profilePayload = await profileResponse.json().catch(() => ({}));
         const auditLogPayload = await auditLogResponse.json().catch(() => ({}));
 
@@ -214,6 +350,10 @@ export default function AdminDashboard({ session }) {
 
         if (!projectsResponse.ok) {
           throw new Error(projectsPayload?.error || "Unable to load projects.");
+        }
+
+        if (!tasksResponse.ok) {
+          throw new Error(tasksPayload?.error || "Unable to load tasks.");
         }
 
         if (!profileResponse.ok) {
@@ -235,6 +375,7 @@ export default function AdminDashboard({ session }) {
           withEngineerDrafts(Array.isArray(engineerPayload?.engineers) ? engineerPayload.engineers : [])
         );
         setProjects(Array.isArray(projectsPayload?.projects) ? projectsPayload.projects : []);
+        setTasks(Array.isArray(tasksPayload?.tasks) ? tasksPayload.tasks : []);
         setAuditLogs(Array.isArray(auditLogPayload?.logs) ? auditLogPayload.logs : []);
         setProfileForm({
           firstName: typeof profile.firstName === "string" ? profile.firstName : "",
@@ -576,6 +717,166 @@ export default function AdminDashboard({ session }) {
     setExpandedProjectsEngineerId((prev) => (prev === engineerId ? "" : engineerId));
   };
 
+  const handleTaskFieldChange = (event) => {
+    const nextValue =
+      event?.target?.type === "checkbox" ? Boolean(event.target.checked) : event?.target?.value;
+    const { name } = event.target;
+
+    setTaskForm((prev) => ({
+      ...prev,
+      [name]: nextValue,
+      ...(name === "projectId"
+        ? {
+            parentTaskId: "",
+            assigneeId: session?.user?.id || "",
+          }
+        : {}),
+    }));
+  };
+
+  const resetTaskForm = (projectId = taskProjectFilter, assigneeId = session?.user?.id || "") => {
+    setEditingTaskId("");
+    setTaskForm(emptyTaskForm(projectId === "all" ? "" : projectId || "", assigneeId));
+  };
+
+  const openCreateTaskForm = (projectId = taskProjectFilter) => {
+    setActivePanel("tasks");
+    setShowCreateTaskForm(true);
+    resetTaskForm(projectId, session?.user?.id || "");
+    setError("");
+    setInfo("");
+  };
+
+  const closeCreateTaskForm = () => {
+    setShowCreateTaskForm(false);
+    resetTaskForm();
+  };
+
+  const beginEditTask = (task) => {
+    setActivePanel("tasks");
+    setShowCreateTaskForm(false);
+    setEditingTaskId(task.id);
+    setTaskForm({
+      projectId: task.projectId || "",
+      name: task.name || "",
+      assigneeId: task.assignee || "",
+      dueOn: toDateInputValue(task.dueOn),
+      notes: task.notes || "",
+      parentTaskId: task.parentTaskId || "",
+      completed: Boolean(task.completed),
+      approvalStatus: task.approvalStatus || "pending",
+    });
+    setError("");
+    setInfo(`Editing task: ${task.name || "Untitled"}`);
+  };
+
+  const submitTask = async (event) => {
+    event.preventDefault();
+    setError("");
+    setInfo("");
+    setSaving(true);
+
+    const isEditing = Boolean(editingTaskId);
+    const formProjectId = taskForm.projectId || (taskProjectFilter !== "all" ? taskProjectFilter : "");
+
+    try {
+      const response = await fetch(isEditing ? `/api/tasks/${editingTaskId}` : "/api/tasks", {
+        method: isEditing ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: formProjectId,
+          name: taskForm.name,
+          assigneeId: taskForm.assigneeId || session?.user?.id || "",
+          dueOn: taskForm.dueOn || null,
+          notes: taskForm.notes,
+          parentTaskId: taskForm.parentTaskId || null,
+          completed: taskForm.completed,
+          approvalStatus: taskForm.approvalStatus,
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload?.error || "Unable to save task.");
+      }
+
+      const task = payload?.task;
+      if (task) {
+        setTasks((prev) => {
+          const next = prev.filter((item) => item.id !== task.id);
+          return [task, ...next];
+        });
+      }
+
+      setInfo(isEditing ? "Task updated." : "Task created.");
+      resetTaskForm(taskProjectFilter !== "all" ? taskProjectFilter : formProjectId, session?.user?.id || "");
+      if (!isEditing) {
+        setShowCreateTaskForm(false);
+      }
+    } catch (saveError) {
+      setError(saveError.message || "Unable to save task.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteTask = async (taskId) => {
+    setError("");
+    setInfo("");
+    setSaving(true);
+
+    try {
+      const response = await fetch(`/api/tasks/${taskId}`, { method: "DELETE" });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload?.error || "Unable to delete task.");
+      }
+
+      setTasks((prev) => prev.filter((task) => task.id !== taskId));
+
+      if (editingTaskId === taskId) {
+        resetTaskForm();
+      }
+
+      setInfo("Task deleted.");
+    } catch (deleteError) {
+      setError(deleteError.message || "Unable to delete task.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleTaskCompleted = async (task) => {
+    setError("");
+    setInfo("");
+    setSaving(true);
+
+    try {
+      const response = await fetch(`/api/tasks/${task.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ completed: !task.completed }),
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload?.error || "Unable to update task.");
+      }
+
+      const updatedTask = payload?.task;
+      if (updatedTask) {
+        setTasks((prev) => prev.map((item) => (item.id === updatedTask.id ? updatedTask : item)));
+      }
+
+      setInfo(task.completed ? "Task reopened." : "Task completed.");
+    } catch (saveError) {
+      setError(saveError.message || "Unable to update task.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleProfileFieldChange = (event) => {
     const { name, value } = event.target;
     setProfileForm((prev) => ({ ...prev, [name]: value }));
@@ -686,6 +987,21 @@ export default function AdminDashboard({ session }) {
 
   const openProjectsPanel = () => {
     setActivePanel("projects");
+  };
+
+  const openTasksPanel = ({ projectId = "all", assigneeId = "all", infoMessage = "" } = {}) => {
+    setActivePanel("tasks");
+    setMobileNavOpen(false);
+    setShowCreateTaskForm(false);
+    setTaskProjectFilter(projectId || "all");
+    setTaskAssigneeFilter(assigneeId || "all");
+    setTaskApprovalFilter("all");
+    setTaskCompletionFilter("all");
+    setTaskDueFilter("all");
+    setTaskSearch("");
+    resetTaskForm(projectId || "all", session?.user?.id || "");
+    setError("");
+    setInfo(infoMessage);
   };
 
   const selectPanel = (panelId) => {
@@ -806,6 +1122,12 @@ export default function AdminDashboard({ session }) {
                   onToggleHoliday={toggleEngineerHolidays}
                   onToggleProjects={toggleEngineerProjects}
                   onProjectClick={beginEdit}
+                  onViewTasks={(engineerId) =>
+                    openTasksPanel({
+                      assigneeId: engineerId,
+                      infoMessage: "Showing tasks assigned to this engineer.",
+                    })
+                  }
                   onBeginEditComp={beginEditEngineerComp}
                   onUpdateEngineerDraft={updateEngineerDraft}
                   onSaveEngineerComp={saveEngineerCompensation}
@@ -856,9 +1178,50 @@ export default function AdminDashboard({ session }) {
                   onSortByChange={setProjectSortBy}
                   onSortDirectionChange={setProjectSortDirection}
                   onEditProject={beginEdit}
+                  onOpenProjectTasks={(project) =>
+                    openTasksPanel({
+                      projectId: project?.id || "all",
+                      infoMessage: project ? `Showing tasks for ${project.name}.` : "",
+                    })
+                  }
                   onArchiveProject={archiveProject}
                   onDeleteProject={deleteProject}
                   onResetProjectForm={resetProjectForm}
+                />
+              ) : null}
+
+              {activePanel === "tasks" ? (
+                <TasksPanel
+                  loading={loading}
+                  saving={saving}
+                  showCreateTaskForm={showCreateTaskForm}
+                  taskForm={taskForm}
+                  projectOptions={taskProjectOptions}
+                  assigneeOptions={taskAssigneeOptions}
+                  filterAssigneeOptions={taskFilterAssigneeOptions}
+                  parentTaskOptions={taskParentOptions}
+                  filteredTasks={filteredTasks}
+                  editingTaskId={editingTaskId}
+                  taskProjectFilter={taskProjectFilter}
+                  taskAssigneeFilter={taskAssigneeFilter}
+                  taskApprovalFilter={taskApprovalFilter}
+                  taskCompletionFilter={taskCompletionFilter}
+                  taskDueFilter={taskDueFilter}
+                  taskSearch={taskSearch}
+                  onOpenCreateTaskForm={() => openCreateTaskForm()}
+                  onCloseCreateTaskForm={closeCreateTaskForm}
+                  onTaskFieldChange={handleTaskFieldChange}
+                  onSubmitTask={submitTask}
+                  onEditTask={beginEditTask}
+                  onDeleteTask={deleteTask}
+                  onToggleTaskCompleted={toggleTaskCompleted}
+                  onTaskProjectFilterChange={setTaskProjectFilter}
+                  onTaskAssigneeFilterChange={setTaskAssigneeFilter}
+                  onTaskApprovalFilterChange={setTaskApprovalFilter}
+                  onTaskCompletionFilterChange={setTaskCompletionFilter}
+                  onTaskDueFilterChange={setTaskDueFilter}
+                  onTaskSearchChange={setTaskSearch}
+                  onResetTaskForm={() => resetTaskForm()}
                 />
               ) : null}
 

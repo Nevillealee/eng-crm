@@ -35,6 +35,7 @@ function buildProps(overrides = {}) {
     onSortByChange: jest.fn(),
     onSortDirectionChange: jest.fn(),
     onEditProject: jest.fn(),
+    onOpenProjectTasks: jest.fn(),
     onArchiveProject: jest.fn(),
     onDeleteProject: jest.fn(),
     onResetProjectForm: jest.fn(),
@@ -69,6 +70,20 @@ describe("Given the projects panel", () => {
     createButton.props.onClick();
 
     expect(onOpenCreateProjectForm).toHaveBeenCalledTimes(1);
+  });
+
+  it("When open tasks is clicked, then opening the tasks panel is requested", () => {
+    const onOpenProjectTasks = jest.fn();
+    const tree = ProjectsPanel(buildProps({ onOpenProjectTasks }));
+
+    const openTasksButton = findFirstElement(
+      tree,
+      (element) => typeof element.props?.onClick === "function" && textFromChildren(element.props.children) === "Open tasks"
+    );
+
+    openTasksButton.props.onClick();
+
+    expect(onOpenProjectTasks).toHaveBeenCalledTimes(1);
   });
 
   it("When create form is visible and cancel is clicked, then closing the create form is requested", () => {

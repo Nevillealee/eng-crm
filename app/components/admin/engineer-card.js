@@ -58,6 +58,7 @@ export default function EngineerCard({
   onToggleHoliday,
   onToggleProjects,
   onProjectClick,
+  onViewTasks,
   onBeginEditComp,
   onUpdateEngineerDraft,
   onSaveEngineerComp,
@@ -197,7 +198,10 @@ export default function EngineerCard({
               Monthly salary (PHP): {formatMonthlySalaryPhp(engineer.monthlySalaryPhp)}
             </Typography>
             <Typography color="text.secondary">Salary notes: {engineer.salaryNotes || "None"}</Typography>
-            <Box>
+            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+              <Button type="button" variant="outlined" onClick={() => onViewTasks?.(engineer.id)}>
+                Tasks
+              </Button>
               <Button type="button" variant="outlined" onClick={onBeginEditComp}>
                 Edit
               </Button>

@@ -1,8 +1,8 @@
 "use client";
 
-import { Alert, Chip, Paper, Stack, Typography } from "@mui/material";
+import { Alert, Button, Chip, Paper, Stack, Typography } from "@mui/material";
 
-export default function ProjectsPanel({ projectsLoading, projects, formatDateLabel }) {
+export default function ProjectsPanel({ projectsLoading, projects, formatDateLabel, onOpenTasks }) {
   return (
     <Stack spacing={2}>
       <Typography variant="h5">Projects</Typography>
@@ -34,6 +34,11 @@ export default function ProjectsPanel({ projectsLoading, projects, formatDateLab
                     ? project.teamMembers.map((member) => member.name).join(", ")
                     : "No team members assigned"}
                 </Typography>
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1} justifyContent={{ sm: "flex-end" }}>
+                  <Button type="button" variant="outlined" onClick={() => onOpenTasks?.(project.id)}>
+                    Tasks
+                  </Button>
+                </Stack>
               </Stack>
             </Paper>
           ))
