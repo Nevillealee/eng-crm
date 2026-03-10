@@ -15,7 +15,7 @@ export function buildProjectChanges({
   updatedProject,
   hasName,
   hasClientName,
-  hasStatus,
+  hasArchived,
   hasCostPhp,
   hasCurrencyCode,
   hasStartDate,
@@ -39,7 +39,7 @@ export function buildProjectChanges({
     changes.clientName = { before: previousProject.clientName, after: updatedProject.clientName };
   }
 
-  if (hasStatus && previousProject.status !== updatedProject.status) {
+  if (hasArchived && previousProject.status !== updatedProject.status) {
     changes.status = { before: previousProject.status, after: updatedProject.status };
   }
 

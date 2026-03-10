@@ -3,6 +3,7 @@ import { auth } from "../../../../auth";
 import prisma from "../../../../lib/prisma";
 import { recordAdminAudit } from "../../../../lib/admin-audit";
 import {
+  archivedProjectStatus,
   isPrismaNotFoundError,
   projectMembershipInclude,
   toProjectDto,
@@ -101,7 +102,7 @@ export async function PATCH(request, { params }) {
       updatedProject: updated,
       hasName: patchInput.hasName,
       hasClientName: patchInput.hasClientName,
-      hasStatus: patchInput.hasStatus,
+      hasArchived: patchInput.hasArchived || patchInput.archived === true,
       hasCostPhp: patchInput.hasCostPhp,
       hasCurrencyCode: patchInput.hasCurrencyCode,
       hasStartDate: patchInput.hasStartDate,
@@ -111,7 +112,7 @@ export async function PATCH(request, { params }) {
     });
 
     if (Object.keys(changes).length > 0) {
-      const isArchiveAction = changes.status?.after === "archived";
+      const isArchiveAction = patchInput.archived === true && updated.status === archivedProjectStatus;
       await recordAdminAudit({
         actorUserId: session.user.id,
         actorEmail: session.user.email,

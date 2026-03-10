@@ -19,10 +19,13 @@ export default function SignupForm({
   onAvatarUpload,
   onAvatarUploadError,
 }) {
+  const avatarAlt =
+    `${formState.firstName || ""} ${formState.lastName || ""}`.trim() || "Engineer avatar";
+
   return (
     <Stack spacing={3}>
       <Stack spacing={1} alignItems="center">
-        <Avatar src={avatarPreview || placeholderAvatar} sx={{ width: 96, height: 96 }} />
+        <Avatar alt={avatarAlt} src={avatarPreview || placeholderAvatar} sx={{ width: 96, height: 96 }} />
         <CloudinaryAvatarUploadButton
           disabled={isSubmitting}
           onUpload={onAvatarUpload}

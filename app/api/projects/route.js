@@ -3,7 +3,7 @@ import { auth } from "../../../auth";
 import prisma from "../../../lib/prisma";
 import { recordAdminAudit } from "../../../lib/admin-audit";
 import {
-  allowedProjectStatuses,
+  archivedProjectStatus,
   parseCostPhpInput,
   parseCurrencyCodeInput,
   parseDateInput,
@@ -18,6 +18,10 @@ import {
   PROJECT_NAME_MAX_LENGTH,
 } from "../../constants/text-limits";
 
+function startOfUtcDay(date) {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+}
+
 export async function GET() {
   try {
     const session = await auth();
@@ -28,14 +32,14 @@ export async function GET() {
 
     const isAdmin = session.user.role === "admin";
     const now = new Date();
+    const todayStart = startOfUtcDay(now);
 
     const where = isAdmin
       ? {}
       : {
           memberships: { some: { userId: session.user.id } },
-          status: "ongoing",
-          startDate: { lte: now },
-          OR: [{ endDate: null }, { endDate: { gte: now } }],
+          status: { not: archivedProjectStatus },
+          OR: [{ endDate: null }, { endDate: { gte: todayStart } }],
         };
 
     const projects = await prisma.project.findMany({
@@ -71,9 +75,9 @@ export async function POST(request) {
 
     const body = await request.json().catch(() => ({}));
     const input = body && typeof body === "object" ? body : {};
+    const hasManualStatus = Object.prototype.hasOwnProperty.call(input, "status");
     const name = typeof input.name === "string" ? input.name.trim() : "";
     const clientName = typeof input.clientName === "string" ? input.clientName.trim() : "";
-    const status = typeof input.status === "string" ? input.status : "ongoing";
     const costPhp = parseCostPhpInput(input.costPhp);
     const currencyCode = parseCurrencyCodeInput(
       input.currencyCode || "PHP",
@@ -91,8 +95,11 @@ export async function POST(request) {
       );
     }
 
-    if (!allowedProjectStatuses.has(status)) {
-      return NextResponse.json({ ok: false, error: "Invalid project status." }, { status: 400 });
+    if (hasManualStatus) {
+      return NextResponse.json(
+        { ok: false, error: "Project status is automatic and cannot be set manually." },
+        { status: 400 }
+      );
     }
 
     if (costPhp === null) {
@@ -131,7 +138,7 @@ export async function POST(request) {
         clientName: clientName.slice(0, PROJECT_CLIENT_NAME_MAX_LENGTH),
         costPhp,
         currencyCode,
-        status,
+        status: "ongoing",
         startDate,
         endDate,
         adminNotes: adminNotes ? adminNotes.slice(0, PROJECT_ADMIN_NOTES_MAX_LENGTH) : null,

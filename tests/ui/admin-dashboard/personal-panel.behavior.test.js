@@ -1,7 +1,8 @@
 const PersonalPanel = require("../../../app/components/admin-dashboard/panels/personal-panel").default;
 const CloudinaryAvatarUploadButton =
   require("../../../app/components/cloudinary-avatar-upload-button").default;
-const { findFirstElement, textFromChildren } = require("../../helpers/react-tree");
+const { PROFILE_NAME_MAX_LENGTH } = require("../../../app/constants/text-limits");
+const { findFirstElement, textFromChildren, treeText } = require("../../helpers/react-tree");
 
 function buildProps(overrides = {}) {
   return {
@@ -143,5 +144,29 @@ describe("Given the personal information panel", () => {
     );
 
     expect(addHolidayButton.props.disabled).toBe(true);
+  });
+
+  it("When the holiday list is missing, then the panel shows an empty-state message instead of crashing", () => {
+    const tree = PersonalPanel(
+      buildProps({
+        profileForm: {
+          ...buildProps().profileForm,
+          upcomingHolidays: undefined,
+        },
+      })
+    );
+
+    expect(treeText(tree)).toContain("No upcoming time off scheduled.");
+  });
+
+  it("When first name is rendered, then the field enforces the profile name length limit", () => {
+    const tree = PersonalPanel(buildProps());
+
+    const firstNameField = findFirstElement(
+      tree,
+      (element) => element.props?.label === "First name" && element.props?.slotProps?.htmlInput
+    );
+
+    expect(firstNameField.props.slotProps.htmlInput.maxLength).toBe(PROFILE_NAME_MAX_LENGTH);
   });
 });

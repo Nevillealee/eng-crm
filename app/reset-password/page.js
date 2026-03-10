@@ -7,12 +7,11 @@ import {
   Alert,
   Box,
   Button,
-  Container,
-  Paper,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
+import { CenteredPageShell } from "../components/page-shell";
 import {
   PASSWORD_MAX_BYTES,
   PASSWORD_MIN_LENGTH,
@@ -90,76 +89,78 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        background: "linear-gradient(135deg, #f5f5f7 0%, #e8eefc 100%)",
-      }}
-    >
-      <Container maxWidth="sm">
-        <Paper sx={{ p: { xs: 4, md: 6 } }}>
-          <Stack spacing={3}>
-            <Stack spacing={1}>
-              <Typography variant="h4">Create a new password</Typography>
-              <Typography color="text.secondary">
-                Enter your new password to complete the reset process.
-              </Typography>
-            </Stack>
-            {error ? <Alert severity="error">{error}</Alert> : null}
-            {info ? <Alert severity="success">{info}</Alert> : null}
-            <Box component="form" onSubmit={handleSubmit} noValidate>
-              <Stack spacing={2}>
-                <TextField
-                  label="New password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    setFieldErrors((prev) => ({
-                      ...prev,
-                      password: "",
-                      confirmPassword: confirmPassword
-                        ? e.target.value === confirmPassword ? "" : "Passwords do not match."
-                        : prev.confirmPassword,
-                    }));
-                  }}
-                  onBlur={(e) => setFieldErrors((prev) => ({ ...prev, password: validateField("password", e.target.value) }))}
-                  error={!!fieldErrors.password}
-                  helperText={fieldErrors.password || ""}
-                  autoComplete="new-password"
-                  slotProps={{ htmlInput: { maxLength: PASSWORD_MAX_BYTES } }}
-                  required
-                  fullWidth
-                />
-                <TextField
-                  label="Confirm new password"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => {
-                    setConfirmPassword(e.target.value);
-                    setFieldErrors((prev) => ({ ...prev, confirmPassword: "" }));
-                  }}
-                  onBlur={(e) => setFieldErrors((prev) => ({ ...prev, confirmPassword: validateField("confirmPassword", e.target.value) }))}
-                  error={!!fieldErrors.confirmPassword}
-                  helperText={fieldErrors.confirmPassword || ""}
-                  autoComplete="new-password"
-                  slotProps={{ htmlInput: { maxLength: PASSWORD_MAX_BYTES } }}
-                  required
-                  fullWidth
-                />
-                <Button type="submit" variant="contained" size="large" disabled={isSubmitting}>
-                  {isSubmitting ? "Saving..." : "Reset password"}
-                </Button>
-                <Typography variant="body2" color="text.secondary" textAlign="center">
-                  Remember your password? <Link href="/login">Sign in</Link>
-                </Typography>
-              </Stack>
-            </Box>
+    <CenteredPageShell>
+      <Stack spacing={3}>
+        <Stack spacing={1}>
+          <Typography variant="overline" color="text.secondary">
+            Devcombine Engineering Portal
+          </Typography>
+          <Typography variant="h4">Create a new password</Typography>
+          <Typography color="text.secondary">
+            Enter your new password to complete the reset process.
+          </Typography>
+        </Stack>
+        {error ? <Alert severity="error">{error}</Alert> : null}
+        {info ? <Alert severity="success">{info}</Alert> : null}
+        <Box component="form" onSubmit={handleSubmit} noValidate>
+          <Stack spacing={2}>
+            <TextField
+              label="New password"
+              type="password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setFieldErrors((prev) => ({
+                  ...prev,
+                  password: "",
+                  confirmPassword: confirmPassword
+                    ? e.target.value === confirmPassword ? "" : "Passwords do not match."
+                    : prev.confirmPassword,
+                }));
+              }}
+              onBlur={(e) =>
+                setFieldErrors((prev) => ({
+                  ...prev,
+                  password: validateField("password", e.target.value),
+                }))
+              }
+              error={!!fieldErrors.password}
+              helperText={fieldErrors.password || ""}
+              autoComplete="new-password"
+              slotProps={{ htmlInput: { maxLength: PASSWORD_MAX_BYTES } }}
+              required
+              fullWidth
+            />
+            <TextField
+              label="Confirm new password"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                setFieldErrors((prev) => ({ ...prev, confirmPassword: "" }));
+              }}
+              onBlur={(e) =>
+                setFieldErrors((prev) => ({
+                  ...prev,
+                  confirmPassword: validateField("confirmPassword", e.target.value),
+                }))
+              }
+              error={!!fieldErrors.confirmPassword}
+              helperText={fieldErrors.confirmPassword || ""}
+              autoComplete="new-password"
+              slotProps={{ htmlInput: { maxLength: PASSWORD_MAX_BYTES } }}
+              required
+              fullWidth
+            />
+            <Button type="submit" variant="contained" size="large" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Reset password"}
+            </Button>
+            <Typography variant="body2" color="text.secondary" textAlign="center">
+              Remember your password? <Link href="/login">Sign in</Link>
+            </Typography>
           </Stack>
-        </Paper>
-      </Container>
-    </Box>
+        </Box>
+      </Stack>
+    </CenteredPageShell>
   );
 }

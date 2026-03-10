@@ -13,7 +13,6 @@ function buildProps(overrides = {}) {
       clientName: "",
       costPhp: "0",
       currencyCode: "PHP",
-      status: "ongoing",
       startDate: "",
       endDate: "",
       adminNotes: "",
@@ -131,7 +130,7 @@ describe("Given the projects panel", () => {
     const projectLists = findAllElements(tree, (element) => element.type === ProjectList);
 
     expect(projectLists).toHaveLength(2);
-    expect(projectLists[0].props.title).toBe("Active projects");
+    expect(projectLists[0].props.title).toBe("Current and completed projects");
     expect(projectLists[1].props.title).toBe("Archived projects");
   });
 });

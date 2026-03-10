@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Box, Button, Container, Paper, Stack, Typography } from "@mui/material";
+import { Button, Stack, Typography } from "@mui/material";
+import { CenteredPageShell } from "../components/page-shell";
 
 function resolveVerificationParams() {
   if (typeof window === "undefined") {
@@ -96,35 +97,29 @@ function VerifyEmailContent() {
   }, [verificationParams]);
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        background: "linear-gradient(135deg, #f5f5f7 0%, #e8eefc 100%)",
-      }}
-    >
-      <Container maxWidth="sm">
-        <Paper sx={{ p: { xs: 4, md: 6 } }}>
-          <Stack spacing={2}>
-            <Typography variant="h4">Email verification</Typography>
-            <Typography color={status === "error" ? "error" : "text.secondary"}>
-              {message}
-            </Typography>
-            <Stack direction="row" spacing={2}>
-              <Button component={Link} href="/login" variant="contained">
-                Go to sign in
-              </Button>
-              {status === "error" ? (
-                <Button component={Link} href="/signup" variant="outlined">
-                  Create a new account
-                </Button>
-              ) : null}
-            </Stack>
-          </Stack>
-        </Paper>
-      </Container>
-    </Box>
+    <CenteredPageShell>
+      <Stack spacing={3}>
+        <Stack spacing={1}>
+          <Typography variant="overline" color="text.secondary">
+            Devcombine Engineering Portal
+          </Typography>
+          <Typography variant="h4">Email verification</Typography>
+        </Stack>
+        <Typography color={status === "error" ? "error" : "text.secondary"}>
+          {message}
+        </Typography>
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+          <Button component={Link} href="/login" variant="contained">
+            Go to sign in
+          </Button>
+          {status === "error" ? (
+            <Button component={Link} href="/signup" variant="outlined">
+              Create a new account
+            </Button>
+          ) : null}
+        </Stack>
+      </Stack>
+    </CenteredPageShell>
   );
 }
 

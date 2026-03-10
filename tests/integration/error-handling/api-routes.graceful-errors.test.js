@@ -159,7 +159,6 @@ describe("Given graceful API error handling", () => {
         name: "Project Alpha",
         clientName: "Client Alpha",
         startDate: "2026-05-01",
-        status: "ongoing",
         costPhp: "10000",
       })
     );
@@ -436,7 +435,7 @@ describe("Given graceful API error handling", () => {
     const { PATCH } = await import("../../../app/api/projects/[projectId]/route.js");
     const response = await PATCH(
       jsonRequest("http://localhost/api/projects/proj-1", "PATCH", {
-        status: "completed",
+        archived: true,
       }),
       { params: Promise.resolve({ projectId: "proj-1" }) }
     );

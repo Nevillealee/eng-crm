@@ -6,10 +6,10 @@ export default function ProjectsPanel({ projectsLoading, projects, formatDateLab
   return (
     <Stack spacing={2}>
       <Typography variant="h5">Projects</Typography>
-      <Typography color="text.secondary">Ongoing projects assigned to you.</Typography>
+      <Typography color="text.secondary">Upcoming and active projects assigned to you.</Typography>
       {projectsLoading ? <Typography color="text.secondary">Loading projects...</Typography> : null}
       {!projectsLoading && projects.length === 0 ? (
-        <Alert severity="info">No ongoing projects assigned yet.</Alert>
+        <Alert severity="info">No upcoming or active projects assigned yet.</Alert>
       ) : null}
       {!projectsLoading && projects.length > 0
         ? projects.map((project) => (
@@ -35,7 +35,12 @@ export default function ProjectsPanel({ projectsLoading, projects, formatDateLab
                     : "No team members assigned"}
                 </Typography>
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1} justifyContent={{ sm: "flex-end" }}>
-                  <Button type="button" variant="outlined" onClick={() => onOpenTasks?.(project.id)}>
+                  <Button
+                    type="button"
+                    variant="outlined"
+                    onClick={() => onOpenTasks?.(project.id)}
+                    sx={{ width: { xs: "100%", sm: "auto" } }}
+                  >
                     Tasks
                   </Button>
                 </Stack>

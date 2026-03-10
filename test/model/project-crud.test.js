@@ -53,7 +53,6 @@ describe("project CRUD integration checks", () => {
       jsonRequest("http://localhost/api/projects", "POST", {
         name: "Website Revamp",
         clientName: "Acme Corp",
-        status: "ongoing",
         costPhp: "150000",
         currencyCode: "PHP",
         startDate: "2026-01-10",

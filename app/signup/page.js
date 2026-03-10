@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Box, Container, Paper } from "@mui/material";
+import { CenteredPageShell } from "../components/page-shell";
 import SignupForm from "./form";
 import { validateSignupField, validateSignupForm } from "./validation";
 
@@ -91,30 +91,19 @@ export default function SignupPage() {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        background: "linear-gradient(135deg, #f5f5f7 0%, #e8eefc 100%)",
-      }}
-    >
-      <Container maxWidth="sm">
-        <Paper sx={{ p: { xs: 4, md: 6 } }}>
-          <SignupForm
-            formState={formState}
-            fieldErrors={fieldErrors}
-            error={error}
-            isSubmitting={isSubmitting}
-            avatarPreview={avatarPreview}
-            onSubmit={handleSubmit}
-            onFieldChange={handleChange}
-            onFieldBlur={handleBlur}
-            onAvatarUpload={handleAvatarUpload}
-            onAvatarUploadError={setError}
-          />
-        </Paper>
-      </Container>
-    </Box>
+    <CenteredPageShell>
+      <SignupForm
+        formState={formState}
+        fieldErrors={fieldErrors}
+        error={error}
+        isSubmitting={isSubmitting}
+        avatarPreview={avatarPreview}
+        onSubmit={handleSubmit}
+        onFieldChange={handleChange}
+        onFieldBlur={handleBlur}
+        onAvatarUpload={handleAvatarUpload}
+        onAvatarUploadError={setError}
+      />
+    </CenteredPageShell>
   );
 }

@@ -1,4 +1,4 @@
-export const allowedProjectStatuses = new Set(["ongoing", "completed", "archived"]);
+export const archivedProjectStatus = "archived";
 
 export const projectMembershipInclude = {
   memberships: {
@@ -36,6 +36,37 @@ export function parseDateInput(value) {
   return parsed;
 }
 
+function startOfUtcDay(date) {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+}
+
+/**
+ * Derives the response-facing lifecycle state for a project from its dates and archive flag.
+ *
+ * @param {{ status?: string | null, startDate?: Date | string | null, endDate?: Date | string | null }} project
+ * @param {Date} [now]
+ * @returns {"upcoming" | "active" | "completed" | "archived"}
+ */
+export function deriveProjectStatus(project, now = new Date()) {
+  if (String(project?.status || "").toLowerCase() === archivedProjectStatus) {
+    return "archived";
+  }
+
+  const todayStart = startOfUtcDay(now);
+  const startDate = project?.startDate ? new Date(project.startDate) : null;
+  const endDate = project?.endDate ? new Date(project.endDate) : null;
+
+  if (startDate && !Number.isNaN(startDate.getTime()) && startDate > todayStart) {
+    return "upcoming";
+  }
+
+  if (endDate && !Number.isNaN(endDate.getTime()) && endDate < todayStart) {
+    return "completed";
+  }
+
+  return "active";
+}
+
 /**
  * Normalizes project membership rows into API team-member DTOs.
  *
@@ -69,7 +100,7 @@ export function toProjectDto(project, includeAdminNotes = false) {
     clientName: project.clientName,
     costPhp: project.costPhp,
     currencyCode: project.currencyCode,
-    status: project.status,
+    status: deriveProjectStatus(project),
     startDate: project.startDate,
     endDate: project.endDate,
     adminNotes: includeAdminNotes ? project.adminNotes : undefined,

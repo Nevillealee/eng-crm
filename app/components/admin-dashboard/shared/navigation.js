@@ -3,6 +3,11 @@
 import { Box, Button, Drawer, Stack, Typography } from "@mui/material";
 import { navigationItems } from "./constants";
 
+const navButtonSx = {
+  justifyContent: "flex-start",
+  px: 2,
+};
+
 export default function AdminDashboardNavigation({
   activePanel,
   mobileNavOpen,
@@ -14,7 +19,18 @@ export default function AdminDashboardNavigation({
   return (
     <>
       <Drawer anchor="left" open={mobileNavOpen} onClose={onCloseMobileNav}>
-        <Box sx={{ width: 280, p: 3, height: "100%", display: "flex", flexDirection: "column" }}>
+        <Box
+          component="nav"
+          aria-label="Admin dashboard navigation"
+          sx={{
+            width: { xs: "100vw", sm: 320 },
+            maxWidth: "100vw",
+            p: 3,
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
           <Stack spacing={2} sx={{ flex: 1 }}>
             <Stack spacing={0.5}>
               <Typography variant="overline" color="text.secondary">
@@ -29,6 +45,8 @@ export default function AdminDashboardNavigation({
                 variant={activePanel === item.id ? "contained" : "text"}
                 onClick={() => onSelectPanel(item.id)}
                 disabled={disabled}
+                fullWidth
+                sx={navButtonSx}
               >
                 {item.label}
               </Button>
@@ -38,7 +56,7 @@ export default function AdminDashboardNavigation({
               variant="outlined"
               onClick={onSignOut}
               fullWidth
-              sx={{ mt: "auto", mb: 1 }}
+              sx={{ ...navButtonSx, mt: "auto", mb: 1 }}
             >
               Sign out
             </Button>
@@ -47,6 +65,8 @@ export default function AdminDashboardNavigation({
       </Drawer>
 
       <Box
+        component="nav"
+        aria-label="Admin dashboard navigation"
         sx={{
           display: { xs: "none", md: "flex" },
           flexDirection: "column",
@@ -73,11 +93,19 @@ export default function AdminDashboardNavigation({
               variant={activePanel === item.id ? "contained" : "text"}
               onClick={() => onSelectPanel(item.id)}
               disabled={disabled}
+              fullWidth
+              sx={navButtonSx}
             >
               {item.label}
             </Button>
           ))}
-          <Button type="button" variant="outlined" onClick={onSignOut} fullWidth sx={{ mt: "auto", mb: 1 }}>
+          <Button
+            type="button"
+            variant="outlined"
+            onClick={onSignOut}
+            fullWidth
+            sx={{ ...navButtonSx, mt: "auto", mb: 1 }}
+          >
             Sign out
           </Button>
         </Stack>

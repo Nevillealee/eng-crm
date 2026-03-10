@@ -127,11 +127,22 @@ export default function TaskForm({
             fullWidth
           />
           <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-            <Button type="submit" variant="contained" disabled={loading || saving}>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={loading || saving}
+              sx={{ width: { xs: "100%", sm: "auto" } }}
+            >
               {saving ? "Saving..." : editingTaskId ? "Update task" : "Create task"}
             </Button>
             {showCancel ? (
-              <Button type="button" variant="outlined" onClick={onCancelEdit} disabled={saving}>
+              <Button
+                type="button"
+                variant="outlined"
+                onClick={onCancelEdit}
+                disabled={saving}
+                sx={{ width: { xs: "100%", sm: "auto" } }}
+              >
                 {cancelLabel}
               </Button>
             ) : null}

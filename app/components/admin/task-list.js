@@ -108,7 +108,13 @@ export default function TaskList({
                 spacing={1}
                 justifyContent={{ sm: "flex-end" }}
               >
-                <Button type="button" variant="outlined" onClick={() => onEdit(task)} disabled={saving}>
+                <Button
+                  type="button"
+                  variant="outlined"
+                  onClick={() => onEdit(task)}
+                  disabled={saving}
+                  sx={{ width: { xs: "100%", sm: "auto" } }}
+                >
                   Edit
                 </Button>
                 <Button
@@ -116,6 +122,7 @@ export default function TaskList({
                   variant="outlined"
                   onClick={() => onToggleCompleted(task)}
                   disabled={saving}
+                  sx={{ width: { xs: "100%", sm: "auto" } }}
                 >
                   {task.completed ? "Reopen" : "Complete"}
                 </Button>
@@ -124,6 +131,7 @@ export default function TaskList({
                   color="error"
                   onClick={() => onDelete(task.id)}
                   disabled={saving}
+                  sx={{ alignSelf: { xs: "flex-end", sm: "center" } }}
                 >
                   <DeleteForeverIcon />
                 </IconButton>

@@ -9,7 +9,7 @@ function buildProps(overrides = {}) {
       {
         id: "proj-1",
         name: "Phoenix",
-        status: "ongoing",
+        status: "active",
         clientName: "Client Inc",
         startDate: "2026-03-01T00:00:00.000Z",
         endDate: null,

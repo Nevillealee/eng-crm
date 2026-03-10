@@ -1,6 +1,10 @@
 "use client";
 
 import {
+  ENGINEER_SALARY_NOTES_MAX_LENGTH,
+  PROFILE_CITY_MAX_LENGTH,
+} from "../../constants/text-limits";
+import {
   Avatar,
   Box,
   Button,
@@ -46,6 +50,23 @@ function formatHolidayDate(value) {
   return parsed.toLocaleDateString();
 }
 
+function DetailBlock({ label, value }) {
+  return (
+    <Stack spacing={0.35} sx={{ minWidth: 0 }}>
+      <Typography variant="overline" color="text.secondary" sx={{ lineHeight: 1.2 }}>
+        {label}
+      </Typography>
+      <Typography
+        variant="body2"
+        dir="auto"
+        sx={{ overflowWrap: "anywhere", wordBreak: "break-word" }}
+      >
+        {value}
+      </Typography>
+    </Stack>
+  );
+}
+
 export default function EngineerCard({
   engineer,
   projects,
@@ -64,21 +85,34 @@ export default function EngineerCard({
   onSaveEngineerComp,
   onCancelEditComp,
 }) {
-  const holidayItems = Array.isArray(engineer.upcomingHolidays) ? engineer.upcomingHolidays : [];
+  const engineerRecord = engineer && typeof engineer === "object" ? engineer : {};
+  const holidayItems = Array.isArray(engineerRecord.upcomingHolidays)
+    ? engineerRecord.upcomingHolidays
+    : [];
+  const projectItems = Array.isArray(projects) ? projects : [];
   const now = new Date();
   const avatarSrc =
-    typeof engineer.image === "string" && engineer.image.trim() ? engineer.image.trim() : undefined;
-  const engineerActiveProjects = projects.filter(
+    typeof engineerRecord.image === "string" && engineerRecord.image.trim()
+      ? engineerRecord.image.trim()
+      : undefined;
+  const engineerDisplayName =
+    engineerRecord.name ||
+    `${engineerRecord.firstName || ""} ${engineerRecord.lastName || ""}`.trim() ||
+    engineerRecord.email ||
+    "Engineer";
+  const holidayRegionId = `engineer-${engineerRecord.id || "unknown"}-holidays`;
+  const projectRegionId = `engineer-${engineerRecord.id || "unknown"}-projects`;
+  const engineerActiveProjects = projectItems.filter(
     (project) =>
       project.status !== "archived" &&
       (!project.endDate || new Date(project.endDate) >= now) &&
       Array.isArray(project.teamMembers) &&
-      project.teamMembers.some((member) => member.id === engineer.id)
+      project.teamMembers.some((member) => member.id === engineerRecord.id)
   );
 
   return (
-    <Paper variant="outlined" sx={{ p: 2 }}>
-      <Stack spacing={1.5}>
+    <Paper variant="outlined" sx={{ p: { xs: 1.75, sm: 2 } }}>
+      <Stack spacing={1.25}>
         <Stack
           direction={{ xs: "column", sm: "row" }}
           spacing={2}
@@ -91,20 +125,28 @@ export default function EngineerCard({
             alignItems="center"
             sx={{ minWidth: 0, flex: 1 }}
           >
-            <Avatar src={avatarSrc}>
-              {(engineer.firstName || engineer.email || "U").slice(0, 1).toUpperCase()}
+            <Avatar
+              alt={
+                engineerDisplayName || "Engineer avatar"
+              }
+              src={avatarSrc}
+            >
+              {(engineerRecord.firstName || engineerRecord.email || "U").slice(0, 1).toUpperCase()}
             </Avatar>
             <Stack sx={{ minWidth: 0, flex: 1 }}>
-              <Typography variant="h6" sx={{ overflowWrap: "anywhere", wordBreak: "break-word" }}>
-                {engineer.name ||
-                  `${engineer.firstName || ""} ${engineer.lastName || ""}`.trim() ||
-                  engineer.email}
+              <Typography
+                variant="h6"
+                dir="auto"
+                sx={{ overflowWrap: "anywhere", wordBreak: "break-word" }}
+              >
+                {engineerDisplayName}
               </Typography>
               <Typography
+                dir="auto"
                 color="text.secondary"
                 sx={{ overflowWrap: "anywhere", wordBreak: "break-word", maxWidth: "100%" }}
               >
-                {engineer.email}
+                {engineerRecord.email || "Email unavailable"}
               </Typography>
             </Stack>
           </Stack>
@@ -118,43 +160,69 @@ export default function EngineerCard({
           <Chip
             size="small"
             variant="outlined"
-            label={`Location: ${engineer.city || "Not set"}`}
+            label={`Location: ${engineerRecord.city || "Not set"}`}
           />
         </Stack>
-        <Typography color="text.secondary">
-          Skills: {Array.isArray(engineer.skills) && engineer.skills.length ? engineer.skills.join(", ") : "None"}
-        </Typography>
-        {engineer.availabilityNote ? (
-          <Typography color="text.secondary">Availability note: {engineer.availabilityNote}</Typography>
-        ) : null}
+        <Box
+          sx={{
+            display: "grid",
+            gap: 1.25,
+            gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))" },
+          }}
+        >
+          <DetailBlock
+            label="Skills"
+            value={
+              Array.isArray(engineerRecord.skills) && engineerRecord.skills.length
+                ? engineerRecord.skills.join(", ")
+                : "None"
+            }
+          />
+          {engineerRecord.availabilityNote ? (
+            <DetailBlock label="Availability note" value={engineerRecord.availabilityNote} />
+          ) : null}
+          <DetailBlock label="Last login" value={formatLastLogin(engineerRecord.lastLogin)} />
+          <DetailBlock label="Last login IP" value={engineerRecord.lastLoginIp || "N/A"} />
+        </Box>
         <Stack spacing={0.5}>
           <Button
             type="button"
             variant="text"
             onClick={onToggleHoliday}
-            sx={{ alignSelf: "flex-start", px: 0, minWidth: 0, textTransform: "none" }}
+            aria-expanded={isHolidayExpanded}
+            aria-controls={holidayRegionId}
+            sx={{
+              alignSelf: { xs: "stretch", sm: "flex-start" },
+              justifyContent: "space-between",
+              px: 0,
+              minWidth: 0,
+              textTransform: "none",
+            }}
           >
             Upcoming holidays: {holidayItems.length}
           </Button>
           <Collapse in={isHolidayExpanded} timeout="auto" unmountOnExit>
-            {holidayItems.length ? (
-              <Stack spacing={0.5}>
-                {holidayItems.map((holiday, index) => (
-                  <Typography
-                    key={`engineer-holiday-${engineer.id}-${index}`}
-                    color="text.secondary"
-                    sx={{ pl: 1 }}
-                  >
-                    {(holiday?.label || "Holiday").trim()}: {formatHolidayDate(holiday?.startDate)} -{" "}
-                    {formatHolidayDate(holiday?.endDate)}
-                  </Typography>
-                ))}
-              </Stack>
-            ) : (
-              <Typography color="text.secondary" sx={{ pl: 1 }}>
-                No upcoming holidays
-              </Typography>
-            )}
+            <Box id={holidayRegionId}>
+              {holidayItems.length ? (
+                <Stack spacing={0.5}>
+                  {holidayItems.map((holiday, index) => (
+                    <Typography
+                      key={`engineer-holiday-${engineerRecord.id}-${index}`}
+                      color="text.secondary"
+                      dir="auto"
+                      sx={{ pl: 1, overflowWrap: "anywhere", wordBreak: "break-word" }}
+                    >
+                      {(holiday?.label || "Holiday").trim()}: {formatHolidayDate(holiday?.startDate)} -{" "}
+                      {formatHolidayDate(holiday?.endDate)}
+                    </Typography>
+                  ))}
+                </Stack>
+              ) : (
+                <Typography color="text.secondary" sx={{ pl: 1 }}>
+                  No upcoming holidays
+                </Typography>
+              )}
+            </Box>
           </Collapse>
         </Stack>
         <Stack spacing={0.5}>
@@ -162,81 +230,156 @@ export default function EngineerCard({
             type="button"
             variant="text"
             onClick={onToggleProjects}
-            sx={{ alignSelf: "flex-start", px: 0, minWidth: 0, textTransform: "none" }}
+            aria-expanded={isProjectsExpanded}
+            aria-controls={projectRegionId}
+            sx={{
+              alignSelf: { xs: "stretch", sm: "flex-start" },
+              justifyContent: "space-between",
+              px: 0,
+              minWidth: 0,
+              textTransform: "none",
+            }}
           >
             Current projects: {engineerActiveProjects.length}
           </Button>
           <Collapse in={isProjectsExpanded} timeout="auto" unmountOnExit>
-            {engineerActiveProjects.length ? (
-              <Stack spacing={0.5}>
-                {engineerActiveProjects.map((project) => (
-                  <ButtonBase
-                    key={`engineer-project-${engineer.id}-${project.id}`}
-                    onClick={() => onProjectClick(project)}
-                    sx={{ justifyContent: "flex-start", pl: 1, borderRadius: 1 }}
-                  >
-                    <Typography color="primary" sx={{ textDecoration: "underline", cursor: "pointer" }}>
-                      {project.name}
-                    </Typography>
-                  </ButtonBase>
-                ))}
-              </Stack>
-            ) : (
-              <Typography color="text.secondary" sx={{ pl: 1 }}>
-                No active projects
-              </Typography>
-            )}
+            <Box id={projectRegionId}>
+              {engineerActiveProjects.length ? (
+                <Stack spacing={0.5}>
+                  {engineerActiveProjects.map((project) => (
+                    <ButtonBase
+                      key={`engineer-project-${engineerRecord.id}-${project.id}`}
+                      onClick={() => onProjectClick(project)}
+                      sx={{
+                        justifyContent: "flex-start",
+                        width: "100%",
+                        px: 1,
+                        py: 0.75,
+                        minHeight: 44,
+                        borderRadius: 1.5,
+                      }}
+                    >
+                      <Typography
+                        color="primary"
+                        dir="auto"
+                        sx={{
+                          textDecoration: "underline",
+                          cursor: "pointer",
+                          overflowWrap: "anywhere",
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        {project.name}
+                      </Typography>
+                    </ButtonBase>
+                  ))}
+                </Stack>
+              ) : (
+                <Typography color="text.secondary" sx={{ pl: 1 }}>
+                  No active projects
+                </Typography>
+              )}
+            </Box>
           </Collapse>
-        </Stack>
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 0.5, sm: 2 }}>
-          <Typography color="text.secondary">Last login: {formatLastLogin(engineer.lastLogin)}</Typography>
-          <Typography color="text.secondary">Last login IP: {engineer.lastLoginIp || "N/A"}</Typography>
         </Stack>
         {!isEditingComp ? (
           <Stack spacing={1}>
-            <Typography color="text.secondary">
-              Monthly salary (PHP): {formatMonthlySalaryPhp(engineer.monthlySalaryPhp)}
-            </Typography>
-            <Typography color="text.secondary">Salary notes: {engineer.salaryNotes || "None"}</Typography>
-            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-              <Button type="button" variant="outlined" onClick={() => onViewTasks?.(engineer.id)}>
+            <Box
+              sx={{
+                display: "grid",
+                gap: 1.25,
+                gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))" },
+              }}
+            >
+              <DetailBlock
+                label="Monthly salary (PHP)"
+                value={formatMonthlySalaryPhp(engineerRecord.monthlySalaryPhp)}
+              />
+              <DetailBlock label="Salary notes" value={engineerRecord.salaryNotes || "None"} />
+            </Box>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+              <Button
+                type="button"
+                variant="outlined"
+                onClick={() => onViewTasks?.(engineerRecord.id)}
+                sx={{ width: { xs: "100%", sm: "auto" } }}
+              >
                 Tasks
               </Button>
-              <Button type="button" variant="outlined" onClick={onBeginEditComp}>
+              <Button
+                type="button"
+                variant="outlined"
+                onClick={onBeginEditComp}
+                sx={{ width: { xs: "100%", sm: "auto" } }}
+              >
                 Edit
               </Button>
-            </Box>
+            </Stack>
           </Stack>
         ) : (
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-            <TextField
-              label="Location"
-              value={engineer.cityDraft}
-              onChange={(event) => onUpdateEngineerDraft(engineer.id, "cityDraft", event.target.value)}
-              sx={{ minWidth: { sm: 220 } }}
-            />
-            <TextField
-              label="Monthly salary (PHP)"
-              type="number"
-              value={engineer.monthlySalaryPhpDraft}
-              onChange={(event) =>
-                onUpdateEngineerDraft(engineer.id, "monthlySalaryPhpDraft", event.target.value)
-              }
-              slotProps={{ htmlInput: { min: 0, step: 1 } }}
-              sx={{ minWidth: { sm: 220 } }}
-            />
-            <TextField
-              label="Salary notes"
-              value={engineer.salaryNotesDraft}
-              onChange={(event) => onUpdateEngineerDraft(engineer.id, "salaryNotesDraft", event.target.value)}
-              fullWidth
-            />
-            <Button type="button" variant="outlined" onClick={onSaveEngineerComp} disabled={isSalarySaving}>
-              {isSalarySaving ? "Saving..." : "Save"}
-            </Button>
-            <Button type="button" variant="text" onClick={onCancelEditComp} disabled={isSalarySaving}>
-              Cancel
-            </Button>
+          <Stack spacing={1.25}>
+            <Box
+              sx={{
+                display: "grid",
+                gap: 1.25,
+                gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))" },
+              }}
+            >
+              <TextField
+                label="Location"
+                value={typeof engineerRecord.cityDraft === "string" ? engineerRecord.cityDraft : ""}
+                onChange={(event) =>
+                  onUpdateEngineerDraft(engineerRecord.id, "cityDraft", event.target.value)
+                }
+                slotProps={{ htmlInput: { maxLength: PROFILE_CITY_MAX_LENGTH, dir: "auto" } }}
+              />
+              <TextField
+                label="Monthly salary (PHP)"
+                type="number"
+                value={
+                  typeof engineerRecord.monthlySalaryPhpDraft === "string" ||
+                  typeof engineerRecord.monthlySalaryPhpDraft === "number"
+                    ? engineerRecord.monthlySalaryPhpDraft
+                    : ""
+                }
+                onChange={(event) =>
+                  onUpdateEngineerDraft(engineerRecord.id, "monthlySalaryPhpDraft", event.target.value)
+                }
+                slotProps={{ htmlInput: { min: 0, step: 1, inputMode: "numeric" } }}
+              />
+              <TextField
+                label="Salary notes"
+                value={typeof engineerRecord.salaryNotesDraft === "string" ? engineerRecord.salaryNotesDraft : ""}
+                onChange={(event) =>
+                  onUpdateEngineerDraft(engineerRecord.id, "salaryNotesDraft", event.target.value)
+                }
+                fullWidth
+                sx={{ gridColumn: { sm: "1 / -1" } }}
+                slotProps={{
+                  htmlInput: { maxLength: ENGINEER_SALARY_NOTES_MAX_LENGTH, dir: "auto" },
+                }}
+              />
+            </Box>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+              <Button
+                type="button"
+                variant="outlined"
+                onClick={onSaveEngineerComp}
+                disabled={isSalarySaving}
+                sx={{ width: { xs: "100%", sm: "auto" } }}
+              >
+                {isSalarySaving ? "Saving..." : "Save"}
+              </Button>
+              <Button
+                type="button"
+                variant="text"
+                onClick={onCancelEditComp}
+                disabled={isSalarySaving}
+                sx={{ width: { xs: "100%", sm: "auto" } }}
+              >
+                Cancel
+              </Button>
+            </Stack>
           </Stack>
         )}
       </Stack>

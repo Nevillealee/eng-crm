@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { signOut } from "next-auth/react";
-import { Alert, Box, Container, Paper, Stack } from "@mui/material";
+import { Alert, Box, Paper, Stack } from "@mui/material";
 import { emptyHoliday, nextDateInputValue, skillOptionSet } from "../profile-form-shared";
 import AccountNavigation from "./account-navigation";
 import { formatDateLabel } from "./formatters";
 import PersonalPanel from "./personal-panel";
 import ProjectsPanel from "./projects-panel";
 import TasksPanel from "./tasks-panel";
+import { AppPageShell, workspaceFrameSx } from "../page-shell";
 import { filterTasks, sortTasks } from "../tasks/shared";
 
 function emptyTaskForm(projectId = "") {
@@ -449,93 +450,78 @@ export default function EngineerAccount() {
   );
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        py: { xs: 3, md: 5 },
-        background: "linear-gradient(135deg, #f5f5f7 0%, #e8eefc 100%)",
-      }}
-    >
-      <Container maxWidth="lg">
-        <Paper
-          sx={{
-            display: "flex",
-            minHeight: { xs: "auto", md: 620 },
-            overflow: "hidden",
-            flexDirection: { xs: "column", md: "row" },
-          }}
-        >
-          <AccountNavigation
-            activePanel={activePanel}
-            saving={saving}
-            onSelectPanel={setActivePanel}
-            onSignOut={handleSignOut}
-          />
+    <AppPageShell>
+      <Paper sx={[workspaceFrameSx, { minHeight: { xs: "auto", md: 620 } }]}>
+        <AccountNavigation
+          activePanel={activePanel}
+          saving={saving}
+          onSelectPanel={setActivePanel}
+          onSignOut={handleSignOut}
+        />
 
-          <Box sx={{ flex: 1, p: { xs: 3, md: 5 } }}>
-            <Stack spacing={2}>
-              {error ? <Alert severity="error">{error}</Alert> : null}
-              {info ? <Alert severity="success">{info}</Alert> : null}
+        <Box sx={{ flex: 1, p: { xs: 3, md: 5 } }}>
+          <Stack spacing={2}>
+            {error ? <Alert severity="error">{error}</Alert> : null}
+            {info ? <Alert severity="success">{info}</Alert> : null}
 
-              {activePanel === "personal" ? (
-                <PersonalPanel
-                  loading={loading}
-                  saving={saving}
-                  form={form}
-                  avatarPreview={avatarPreview}
-                  onSubmit={handleSaveProfile}
-                  onFieldChange={handleFieldChange}
-                  onAvatarUpload={handleAvatarUpload}
-                  onAvatarUploadError={setError}
-                  onAvatarRemove={handleAvatarRemove}
-                  onSkillsChange={(skills) => setForm((prev) => ({ ...prev, skills }))}
-                  onHolidayChange={handleHolidayChange}
-                  onRemoveHoliday={removeHoliday}
-                  onAddHoliday={addHoliday}
-                />
-              ) : null}
+            {activePanel === "personal" ? (
+              <PersonalPanel
+                loading={loading}
+                saving={saving}
+                form={form}
+                avatarPreview={avatarPreview}
+                onSubmit={handleSaveProfile}
+                onFieldChange={handleFieldChange}
+                onAvatarUpload={handleAvatarUpload}
+                onAvatarUploadError={setError}
+                onAvatarRemove={handleAvatarRemove}
+                onSkillsChange={(skills) => setForm((prev) => ({ ...prev, skills }))}
+                onHolidayChange={handleHolidayChange}
+                onRemoveHoliday={removeHoliday}
+                onAddHoliday={addHoliday}
+              />
+            ) : null}
 
-              {activePanel === "projects" ? (
-                <ProjectsPanel
-                  projectsLoading={projectsLoading}
-                  projects={projects}
-                  formatDateLabel={formatDateLabel}
-                  onOpenTasks={openTasksPanel}
-                />
-              ) : null}
+            {activePanel === "projects" ? (
+              <ProjectsPanel
+                projectsLoading={projectsLoading}
+                projects={projects}
+                formatDateLabel={formatDateLabel}
+                onOpenTasks={openTasksPanel}
+              />
+            ) : null}
 
-              {activePanel === "tasks" ? (
-                <TasksPanel
-                  saving={saving}
-                  tasksLoading={tasksLoading}
-                  taskForm={taskForm}
-                  projectOptions={engineerProjectOptions}
-                  filterProjectOptions={engineerProjectOptions}
-                  parentTaskOptions={taskParentOptions}
-                  filteredTasks={filteredTasks}
-                  editingTaskId={editingTaskId}
-                  taskProjectFilter={taskProjectFilter}
-                  taskApprovalFilter={taskApprovalFilter}
-                  taskCompletionFilter={taskCompletionFilter}
-                  taskDueFilter={taskDueFilter}
-                  taskSearch={taskSearch}
-                  onTaskFieldChange={handleTaskFieldChange}
-                  onSubmitTask={submitTask}
-                  onEditTask={beginEditTask}
-                  onDeleteTask={deleteTask}
-                  onToggleTaskCompleted={toggleTaskCompleted}
-                  onTaskProjectFilterChange={setTaskProjectFilter}
-                  onTaskApprovalFilterChange={setTaskApprovalFilter}
-                  onTaskCompletionFilterChange={setTaskCompletionFilter}
-                  onTaskDueFilterChange={setTaskDueFilter}
-                  onTaskSearchChange={setTaskSearch}
-                  onResetTaskForm={() => resetTaskForm()}
-                />
-              ) : null}
-            </Stack>
-          </Box>
-        </Paper>
-      </Container>
-    </Box>
+            {activePanel === "tasks" ? (
+              <TasksPanel
+                saving={saving}
+                tasksLoading={tasksLoading}
+                taskForm={taskForm}
+                projectOptions={engineerProjectOptions}
+                filterProjectOptions={engineerProjectOptions}
+                parentTaskOptions={taskParentOptions}
+                filteredTasks={filteredTasks}
+                editingTaskId={editingTaskId}
+                taskProjectFilter={taskProjectFilter}
+                taskApprovalFilter={taskApprovalFilter}
+                taskCompletionFilter={taskCompletionFilter}
+                taskDueFilter={taskDueFilter}
+                taskSearch={taskSearch}
+                onTaskFieldChange={handleTaskFieldChange}
+                onSubmitTask={submitTask}
+                onEditTask={beginEditTask}
+                onDeleteTask={deleteTask}
+                onToggleTaskCompleted={toggleTaskCompleted}
+                onTaskProjectFilterChange={setTaskProjectFilter}
+                onTaskApprovalFilterChange={setTaskApprovalFilter}
+                onTaskCompletionFilterChange={setTaskCompletionFilter}
+                onTaskDueFilterChange={setTaskDueFilter}
+                onTaskSearchChange={setTaskSearch}
+                onResetTaskForm={() => resetTaskForm()}
+              />
+            ) : null}
+          </Stack>
+        </Box>
+      </Paper>
+    </AppPageShell>
   );
 }

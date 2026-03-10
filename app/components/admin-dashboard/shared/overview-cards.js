@@ -13,30 +13,39 @@ export default function OverviewCards({
     <Box
       sx={{
         display: "grid",
-        gap: { xs: 1.25, sm: 2 },
-        gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+        gap: { xs: 1.5, sm: 2 },
+        gridTemplateColumns: {
+          xs: "1fr",
+          sm: "repeat(2, minmax(0, 1fr))",
+          lg: "repeat(3, minmax(0, 1fr))",
+        },
       }}
     >
       <ButtonBase
         type="button"
         onClick={() => onOpenEngineers("all")}
-        sx={{ borderRadius: 1, textAlign: "left", width: "100%", minWidth: 0 }}
+        sx={{ borderRadius: 2, textAlign: "left", width: "100%", minWidth: 0 }}
       >
         <Paper
           variant="outlined"
           sx={{
-            p: { xs: 1.25, sm: 2 },
+            p: { xs: 2, sm: 2.5 },
             width: "100%",
-            height: { xs: 105, sm: 120 },
+            minHeight: { xs: 112, sm: 124 },
             transition: "border-color 180ms ease, box-shadow 180ms ease",
             "&:hover": { borderColor: "primary.main", boxShadow: 2 },
           }}
         >
           <Stack sx={{ height: "100%" }} justifyContent="space-between">
             <Typography
-              variant="overline"
+              variant="body2"
               color="text.secondary"
-              sx={{ minHeight: { xs: 34, sm: 40 }, lineHeight: 1.2, fontSize: { xs: "0.7rem", sm: "0.8rem" } }}
+              sx={{
+                minHeight: { xs: 24, sm: 28 },
+                fontWeight: 600,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+              }}
             >
               Engineers
             </Typography>
@@ -48,23 +57,28 @@ export default function OverviewCards({
       <ButtonBase
         type="button"
         onClick={onOpenProjects}
-        sx={{ borderRadius: 1, textAlign: "left", width: "100%", minWidth: 0 }}
+        sx={{ borderRadius: 2, textAlign: "left", width: "100%", minWidth: 0 }}
       >
         <Paper
           variant="outlined"
           sx={{
-            p: { xs: 1.25, sm: 2 },
+            p: { xs: 2, sm: 2.5 },
             width: "100%",
-            height: { xs: 105, sm: 120 },
+            minHeight: { xs: 112, sm: 124 },
             transition: "border-color 180ms ease, box-shadow 180ms ease",
             "&:hover": { borderColor: "primary.main", boxShadow: 2 },
           }}
         >
           <Stack sx={{ height: "100%" }} justifyContent="space-between">
             <Typography
-              variant="overline"
+              variant="body2"
               color="text.secondary"
-              sx={{ minHeight: { xs: 34, sm: 40 }, lineHeight: 1.2, fontSize: { xs: "0.7rem", sm: "0.8rem" } }}
+              sx={{
+                minHeight: { xs: 24, sm: 28 },
+                fontWeight: 600,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+              }}
             >
               Projects
             </Typography>
@@ -76,23 +90,28 @@ export default function OverviewCards({
       <ButtonBase
         type="button"
         onClick={() => onOpenEngineers("available")}
-        sx={{ borderRadius: 1, textAlign: "left", width: "100%", minWidth: 0 }}
+        sx={{ borderRadius: 2, textAlign: "left", width: "100%", minWidth: 0 }}
       >
         <Paper
           variant="outlined"
           sx={{
-            p: { xs: 1.25, sm: 2 },
+            p: { xs: 2, sm: 2.5 },
             width: "100%",
-            height: { xs: 105, sm: 120 },
+            minHeight: { xs: 112, sm: 124 },
             transition: "border-color 180ms ease, box-shadow 180ms ease",
             "&:hover": { borderColor: "primary.main", boxShadow: 2 },
           }}
         >
           <Stack sx={{ height: "100%" }} justifyContent="space-between">
             <Typography
-              variant="overline"
+              variant="body2"
               color="text.secondary"
-              sx={{ minHeight: { xs: 34, sm: 40 }, lineHeight: 1.2, fontSize: { xs: "0.7rem", sm: "0.8rem" } }}
+              sx={{
+                minHeight: { xs: 24, sm: 28 },
+                fontWeight: 600,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+              }}
             >
               Available engineers
             </Typography>

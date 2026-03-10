@@ -9,7 +9,6 @@ export default function ProjectForm({
   showCancel = false,
   cancelLabel = "Cancel",
   form,
-  statusOptions,
   currencyOptions,
   engineers,
   selectedTeam,
@@ -64,21 +63,6 @@ export default function ProjectForm({
               </MenuItem>
             ))}
           </TextField>
-          <TextField
-            select
-            label="Status"
-            name="status"
-            value={form.status}
-            onChange={onFieldChange}
-            disabled={loading || saving}
-            fullWidth
-          >
-            {statusOptions.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </TextField>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
             <TextField
               label="Start date"
@@ -130,11 +114,22 @@ export default function ProjectForm({
             fullWidth
           />
           <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-            <Button type="submit" variant="contained" disabled={loading || saving}>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={loading || saving}
+              sx={{ width: { xs: "100%", sm: "auto" } }}
+            >
               {saving ? "Saving..." : editingProjectId ? "Update project" : "Create project"}
             </Button>
             {showCancel ? (
-              <Button type="button" variant="outlined" onClick={onCancelEdit} disabled={saving}>
+              <Button
+                type="button"
+                variant="outlined"
+                onClick={onCancelEdit}
+                disabled={saving}
+                sx={{ width: { xs: "100%", sm: "auto" } }}
+              >
                 {cancelLabel}
               </Button>
             ) : null}

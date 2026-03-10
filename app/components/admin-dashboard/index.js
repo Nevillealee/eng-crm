@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { signOut } from "next-auth/react";
 import MenuIcon from "@mui/icons-material/Menu";
-import { Alert, Box, Container, IconButton, Paper, Stack, Typography } from "@mui/material";
+import { Alert, Box, IconButton, Paper, Stack, Typography } from "@mui/material";
 import { emptyHoliday, nextDateInputValue, skillOptionSet } from "../profile-form-shared";
 import AuditPanel from "./panels/audit-panel";
 import DashboardPanel from "./panels/dashboard-panel";
@@ -11,6 +11,7 @@ import EngineersPanel from "./panels/engineers-panel";
 import PersonalPanel from "./panels/personal-panel";
 import ProjectsPanel from "./panels/projects-panel";
 import TasksPanel from "./panels/tasks-panel";
+import { AppPageShell, workspaceFrameSx } from "../page-shell";
 import { filterEngineers } from "./shared/engineer-filters";
 import AdminDashboardNavigation from "./shared/navigation";
 import OverviewCards from "./shared/overview-cards";
@@ -48,7 +49,6 @@ function emptyProjectForm() {
     clientName: "",
     costPhp: "0",
     currencyCode: "PHP",
-    status: "ongoing",
     startDate: "",
     endDate: "",
     adminNotes: "",
@@ -475,7 +475,6 @@ export default function AdminDashboard({ session }) {
       clientName: project.clientName || "",
       costPhp: String(project.costPhp ?? 0),
       currencyCode: project.currencyCode || "PHP",
-      status: project.status || "ongoing",
       startDate: toDateInputValue(project.startDate),
       endDate: toDateInputValue(project.endDate),
       adminNotes: project.adminNotes || "",
@@ -499,7 +498,6 @@ export default function AdminDashboard({ session }) {
         clientName: projectForm.clientName,
         costPhp: projectForm.costPhp,
         currencyCode: projectForm.currencyCode,
-        status: projectForm.status,
         startDate: projectForm.startDate,
         endDate: projectForm.endDate || null,
         adminNotes: projectForm.adminNotes,
@@ -547,7 +545,7 @@ export default function AdminDashboard({ session }) {
       const response = await fetch(`/api/projects/${projectId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "archived" }),
+        body: JSON.stringify({ archived: true }),
       });
       const body = await response.json().catch(() => ({}));
 
@@ -1033,23 +1031,8 @@ export default function AdminDashboard({ session }) {
   const disabled = saving || profileSaving;
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        py: { xs: 3, md: 5 },
-        background: "linear-gradient(135deg, #f5f5f7 0%, #e8eefc 100%)",
-      }}
-    >
-      <Container maxWidth="lg">
-        <Paper
-          sx={{
-            display: "flex",
-            alignItems: "stretch",
-            minHeight: { xs: "auto", md: 700 },
-            overflow: "hidden",
-            flexDirection: { xs: "column", md: "row" },
-          }}
-        >
+    <AppPageShell>
+      <Paper sx={[workspaceFrameSx, { minHeight: { xs: "auto", md: 700 } }]}>
           <AdminDashboardNavigation
             activePanel={activePanel}
             mobileNavOpen={mobileNavOpen}
@@ -1236,8 +1219,7 @@ export default function AdminDashboard({ session }) {
               ) : null}
             </Stack>
           </Box>
-        </Paper>
-      </Container>
-    </Box>
+      </Paper>
+    </AppPageShell>
   );
 }

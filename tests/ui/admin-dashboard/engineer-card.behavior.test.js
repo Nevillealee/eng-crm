@@ -97,4 +97,44 @@ describe("Given an engineer card in the admin dashboard", () => {
 
     expect(onViewTasks).toHaveBeenCalledWith("eng-1");
   });
+
+  it("When projects are unavailable, then the card still renders a safe collapsed project state", () => {
+    const tree = EngineerCard(buildProps({ projects: null }));
+
+    const projectsButton = findFirstElement(
+      tree,
+      (element) =>
+        typeof element.props?.onClick === "function" &&
+        String(element.props?.children).includes("Current projects:")
+    );
+
+    expect(projectsButton.props.children).toContain(0);
+  });
+
+  it("When collapsible sections render, then they expose their expanded state to assistive technology", () => {
+    const tree = EngineerCard(
+      buildProps({
+        isHolidayExpanded: true,
+        isProjectsExpanded: false,
+      })
+    );
+
+    const holidayButton = findFirstElement(
+      tree,
+      (element) =>
+        typeof element.props?.onClick === "function" &&
+        String(element.props?.children).includes("Upcoming holidays:")
+    );
+    const projectsButton = findFirstElement(
+      tree,
+      (element) =>
+        typeof element.props?.onClick === "function" &&
+        String(element.props?.children).includes("Current projects:")
+    );
+
+    expect(holidayButton.props["aria-expanded"]).toBe(true);
+    expect(typeof holidayButton.props["aria-controls"]).toBe("string");
+    expect(projectsButton.props["aria-expanded"]).toBe(false);
+    expect(typeof projectsButton.props["aria-controls"]).toBe("string");
+  });
 });

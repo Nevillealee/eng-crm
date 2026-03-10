@@ -21,6 +21,7 @@ import {
   taskDueFilterOptions,
   taskUserLabel,
 } from "../tasks/shared";
+import CompactPanelSection from "../compact-panel-section";
 import { FormDateField, FormSelectField, FormTextField } from "../form-fields";
 
 function parentLabel(task) {
@@ -33,6 +34,17 @@ function parentLabel(task) {
   }
 
   return task.parent.name || "Project root";
+}
+
+function hasTaskDraft(taskForm, editingTaskId) {
+  return Boolean(
+    editingTaskId ||
+      taskForm.projectId ||
+      taskForm.name.trim() ||
+      taskForm.dueOn ||
+      taskForm.parentTaskId ||
+      taskForm.notes.trim()
+  );
 }
 
 export default function TasksPanel({
@@ -64,85 +76,101 @@ export default function TasksPanel({
   const projectFilterItems = [{ value: "all", label: "All projects" }].concat(
     filterProjectOptions.map((project) => ({ value: project.id, label: project.name }))
   );
+  const draftOpen = hasTaskDraft(taskForm, editingTaskId);
+  const activeFilterCount = [
+    taskProjectFilter !== "all",
+    taskApprovalFilter !== "all",
+    taskCompletionFilter !== "all",
+    taskDueFilter !== "all",
+    taskSearch.trim() !== "",
+  ].filter(Boolean).length;
 
   return (
     <Stack spacing={2}>
-      <Paper variant="outlined" sx={{ p: 3 }}>
-        <Stack spacing={2}>
-          <Typography variant="h5">{editingTaskId ? "Edit task" : "Create task"}</Typography>
-          <Typography color="text.secondary">
-            Create self-assigned tasks for your projects and manage tasks you own or are assigned to.
-          </Typography>
-          <Stack component="form" spacing={2} onSubmit={onSubmitTask} noValidate>
-            <FormSelectField
-              label="Project"
-              name="projectId"
-              value={taskForm.projectId}
+      <CompactPanelSection
+        title={editingTaskId ? "Edit task" : "Create task"}
+        description="Create self-assigned tasks for your projects and manage tasks you own or are assigned to."
+        summary={draftOpen ? "Draft in progress" : "Open when you need a new task"}
+        defaultExpandedMobile={draftOpen}
+      >
+        <Stack component="form" spacing={2} onSubmit={onSubmitTask} noValidate>
+          <FormSelectField
+            label="Project"
+            name="projectId"
+            value={taskForm.projectId}
+            onChange={onTaskFieldChange}
+            options={[{ value: "", label: "Select project" }].concat(
+              projectOptions.map((project) => ({ value: project.id, label: project.name }))
+            )}
+            disabled={saving}
+          />
+          <FormTextField
+            label="Task name"
+            name="name"
+            value={taskForm.name}
+            onChange={onTaskFieldChange}
+            disabled={saving}
+          />
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+            <FormDateField
+              label="Due date"
+              name="dueOn"
+              value={taskForm.dueOn}
               onChange={onTaskFieldChange}
-              options={[{ value: "", label: "Select project" }].concat(
-                projectOptions.map((project) => ({ value: project.id, label: project.name }))
-              )}
               disabled={saving}
+              fullWidth
             />
-            <FormTextField
-              label="Task name"
-              name="name"
-              value={taskForm.name}
+            <TextField
+              select
+              label="Parent task"
+              name="parentTaskId"
+              value={taskForm.parentTaskId}
               onChange={onTaskFieldChange}
               disabled={saving}
-            />
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-              <FormDateField
-                label="Due date"
-                name="dueOn"
-                value={taskForm.dueOn}
-                onChange={onTaskFieldChange}
+              fullWidth
+            >
+              <MenuItem value="">No parent</MenuItem>
+              {parentTaskOptions.map((task) => (
+                <MenuItem key={task.id} value={task.id}>
+                  {task.name}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Stack>
+          <FormTextField
+            label="Notes"
+            name="notes"
+            value={taskForm.notes}
+            onChange={onTaskFieldChange}
+            disabled={saving}
+            multiline
+            minRows={3}
+          />
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+            <Button type="submit" variant="contained" disabled={saving} sx={{ width: { xs: "100%", sm: "auto" } }}>
+              {saving ? "Saving..." : editingTaskId ? "Update task" : "Create task"}
+            </Button>
+            {editingTaskId ? (
+              <Button
+                type="button"
+                variant="outlined"
+                onClick={onResetTaskForm}
                 disabled={saving}
-                fullWidth
-              />
-              <TextField
-                select
-                label="Parent task"
-                name="parentTaskId"
-                value={taskForm.parentTaskId}
-                onChange={onTaskFieldChange}
-                disabled={saving}
-                fullWidth
+                sx={{ width: { xs: "100%", sm: "auto" } }}
               >
-                <MenuItem value="">No parent</MenuItem>
-                {parentTaskOptions.map((task) => (
-                  <MenuItem key={task.id} value={task.id}>
-                    {task.name}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Stack>
-            <FormTextField
-              label="Notes"
-              name="notes"
-              value={taskForm.notes}
-              onChange={onTaskFieldChange}
-              disabled={saving}
-              multiline
-              minRows={3}
-            />
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-              <Button type="submit" variant="contained" disabled={saving}>
-                {saving ? "Saving..." : editingTaskId ? "Update task" : "Create task"}
+                Cancel edit
               </Button>
-              {editingTaskId ? (
-                <Button type="button" variant="outlined" onClick={onResetTaskForm} disabled={saving}>
-                  Cancel edit
-                </Button>
-              ) : null}
-            </Stack>
+            ) : null}
           </Stack>
         </Stack>
-      </Paper>
+      </CompactPanelSection>
 
-      <Paper variant="outlined" sx={{ p: 3 }}>
+      <CompactPanelSection
+        title="My tasks"
+        summary={activeFilterCount ? `${activeFilterCount} active filter${activeFilterCount > 1 ? "s" : ""}` : "Search and narrow your task list"}
+        defaultExpandedMobile={activeFilterCount > 0}
+      >
         <Stack spacing={2}>
-          <Typography variant="h5">My tasks</Typography>
           <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
             <FormTextField
               label="Search tasks"
@@ -181,7 +209,7 @@ export default function TasksPanel({
             />
           </Stack>
         </Stack>
-      </Paper>
+      </CompactPanelSection>
 
       {tasksLoading ? <Typography color="text.secondary">Loading tasks...</Typography> : null}
       {!tasksLoading && filteredTasks.length === 0 ? (
@@ -227,7 +255,13 @@ export default function TasksPanel({
                   spacing={1}
                   justifyContent={{ sm: "flex-end" }}
                 >
-                  <Button type="button" variant="outlined" onClick={() => onEditTask(task)} disabled={saving}>
+                  <Button
+                    type="button"
+                    variant="outlined"
+                    onClick={() => onEditTask(task)}
+                    disabled={saving}
+                    sx={{ width: { xs: "100%", sm: "auto" } }}
+                  >
                     Edit
                   </Button>
                   <Button
@@ -235,6 +269,7 @@ export default function TasksPanel({
                     variant="outlined"
                     onClick={() => onToggleTaskCompleted(task)}
                     disabled={saving}
+                    sx={{ width: { xs: "100%", sm: "auto" } }}
                   >
                     {task.completed ? "Reopen" : "Complete"}
                   </Button>
@@ -243,6 +278,7 @@ export default function TasksPanel({
                     color="error"
                     onClick={() => onDeleteTask(task.id)}
                     disabled={saving}
+                    sx={{ alignSelf: { xs: "flex-end", sm: "center" } }}
                   >
                     <DeleteForeverIcon />
                   </IconButton>

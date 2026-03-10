@@ -9,13 +9,12 @@ import {
   Box,
   Button,
   Checkbox,
-  Container,
   FormControlLabel,
-  Paper,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
+import { CenteredPageShell } from "../components/page-shell";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -84,83 +83,67 @@ export default function LoginPage() {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        background: "linear-gradient(135deg, #f5f5f7 0%, #e8eefc 100%)",
-      }}
-    >
-      <Container maxWidth="sm">
-        <Paper sx={{ p: { xs: 4, md: 6 } }}>
-          <Stack spacing={3}>
-            <Stack spacing={1}>
-              <Typography variant="overline" color="text.secondary">
-                Devcombine Engineering Portal
+    <CenteredPageShell>
+      <Stack spacing={3}>
+        <Stack spacing={1}>
+          <Typography variant="overline" color="text.secondary">
+            Devcombine Engineering Portal
+          </Typography>
+          <Typography variant="h4">Welcome back</Typography>
+          <Typography color="text.secondary">
+            Sign in with your assigned credentials to continue.
+          </Typography>
+        </Stack>
+        {error ? <Alert severity="error">{error}</Alert> : null}
+        {info ? <Alert severity="success">{info}</Alert> : null}
+        <Box component="form" onSubmit={handleSubmit} noValidate>
+          <Stack spacing={2}>
+            <TextField
+              label="Email address"
+              name="email"
+              type="email"
+              value={formState.email}
+              onChange={handleChange}
+              autoComplete="email"
+              required
+              fullWidth
+            />
+            <TextField
+              label="Password"
+              name="password"
+              type="password"
+              value={formState.password}
+              onChange={handleChange}
+              autoComplete="current-password"
+              required
+              fullWidth
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  name="rememberMe"
+                  checked={formState.rememberMe}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
+                />
+              }
+              label="Remember me"
+            />
+            <Button type="submit" variant="contained" size="large" disabled={isSubmitting}>
+              {isSubmitting ? "Signing in..." : "Sign in"}
+            </Button>
+            <Stack spacing={1} alignItems="center">
+              <Typography variant="body2" color="text.secondary">
+                New here?{" "}
+                <Link href="/signup">Create an account</Link>
               </Typography>
-              <Typography variant="h4">Welcome back</Typography>
-              <Typography color="text.secondary">
-                Sign in with your assigned credentials to continue.
+              <Typography variant="body2" color="text.secondary">
+                <Link href="/forgot-password">Forgot password?</Link>
               </Typography>
             </Stack>
-            {error ? <Alert severity="error">{error}</Alert> : null}
-            {info ? <Alert severity="success">{info}</Alert> : null}
-            <Box component="form" onSubmit={handleSubmit} noValidate>
-              <Stack spacing={2}>
-                <TextField
-                  label="Email address"
-                  name="email"
-                  type="email"
-                  value={formState.email}
-                  onChange={handleChange}
-                  autoComplete="email"
-                  required
-                  fullWidth
-                />
-                <TextField
-                  label="Password"
-                  name="password"
-                  type="password"
-                  value={formState.password}
-                  onChange={handleChange}
-                  autoComplete="current-password"
-                  required
-                  fullWidth
-                />
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      name="rememberMe"
-                      checked={formState.rememberMe}
-                      onChange={handleChange}
-                      disabled={isSubmitting}
-                    />
-                  }
-                  label="Remember me"
-                />
-                <Button
-                  type="submit"
-                  variant="contained"
-                  size="large"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "Signing in..." : "Sign in"}
-                </Button>
-                <Stack spacing={1} alignItems="center">
-                  <Typography variant="body2" color="text.secondary">
-                    New here?{" "}
-                    <Link href="/signup">Create an account</Link>
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    <Link href="/forgot-password">Forgot password?</Link>
-                  </Typography>
-                </Stack>
-              </Stack>
-            </Box>
           </Stack>
-        </Paper>
-      </Container>
-    </Box>
+        </Box>
+      </Stack>
+    </CenteredPageShell>
   );
 }

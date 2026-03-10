@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Alert, Box, Button, Container, Divider, Paper, Stack, TextField, Typography } from "@mui/material";
+import { Alert, Box, Button, Divider, Stack, TextField, Typography } from "@mui/material";
 import Link from "next/link";
+import { CenteredPageShell } from "../components/page-shell";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -75,72 +76,67 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        background: "linear-gradient(135deg, #f5f5f7 0%, #e8eefc 100%)",
-      }}
-    >
-      <Container maxWidth="sm">
-        <Paper sx={{ p: { xs: 4, md: 6 } }}>
-          <Stack spacing={3}>
-            <Stack spacing={1}>
-              <Typography variant="h4">Reset your password</Typography>
-              <Typography color="text.secondary">
-                Enter your email address and we&apos;ll send you a link to reset your password.
+    <CenteredPageShell>
+      <Stack spacing={3}>
+        <Stack spacing={1}>
+          <Typography variant="overline" color="text.secondary">
+            Devcombine Engineering Portal
+          </Typography>
+          <Typography variant="h4">Reset your password</Typography>
+          <Typography color="text.secondary">
+            Enter your email address and we&apos;ll send you a link to reset your password.
+          </Typography>
+        </Stack>
+        {error ? <Alert severity="error">{error}</Alert> : null}
+        {info ? <Alert severity="success">{info}</Alert> : null}
+        <Box component="form" onSubmit={handleSubmit} noValidate>
+          <Stack spacing={2}>
+            <TextField
+              label="Email address"
+              name="email"
+              type="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setEmailError("");
+              }}
+              onBlur={(e) => setEmailError(validateEmail(e.target.value))}
+              error={!!emailError}
+              helperText={emailError || ""}
+              autoComplete="email"
+              required
+              fullWidth
+            />
+            <Button
+              type="submit"
+              variant="contained"
+              size="large"
+              disabled={isSubmitting || !email || !!emailError}
+            >
+              {isSubmitting ? "Sending..." : "Send reset link"}
+            </Button>
+            <Divider>
+              <Typography variant="caption" color="text.secondary">
+                or
+              </Typography>
+            </Divider>
+            <Button
+              type="button"
+              variant="outlined"
+              size="large"
+              disabled={isResending || !email || !!emailError}
+              onClick={handleResend}
+            >
+              {isResending ? "Sending..." : "Resend verification email"}
+            </Button>
+            <Stack spacing={1} alignItems="center">
+              <Typography variant="body2" color="text.secondary">
+                <Link href="/login">Return to sign in</Link>
               </Typography>
             </Stack>
-            {error ? <Alert severity="error">{error}</Alert> : null}
-            {info ? <Alert severity="success">{info}</Alert> : null}
-            <Box component="form" onSubmit={handleSubmit} noValidate>
-              <Stack spacing={2}>
-                <TextField
-                  label="Email address"
-                  name="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => { setEmail(e.target.value); setEmailError(""); }}
-                  onBlur={(e) => setEmailError(validateEmail(e.target.value))}
-                  error={!!emailError}
-                  helperText={emailError || ""}
-                  autoComplete="email"
-                  required
-                  fullWidth
-                />
-                <Button
-                  type="submit"
-                  variant="contained"
-                  size="large"
-                  disabled={isSubmitting || !email || !!emailError}
-                >
-                  {isSubmitting ? "Sending..." : "Send reset link"}
-                </Button>
-                <Divider>
-                  <Typography variant="caption" color="text.secondary">
-                    or
-                  </Typography>
-                </Divider>
-                <Button
-                  type="button"
-                  variant="outlined"
-                  size="large"
-                  disabled={isResending || !email || !!emailError}
-                  onClick={handleResend}
-                >
-                  {isResending ? "Sending..." : "Resend verification email"}
-                </Button>
-                <Stack spacing={1} alignItems="center">
-                  <Typography variant="body2" color="text.secondary">
-                    <Link href="/login">Return to sign in</Link>
-                  </Typography>
-                </Stack>
-              </Stack>
-            </Box>
           </Stack>
-        </Paper>
-      </Container>
-    </Box>
+        </Box>
+      </Stack>
+    </CenteredPageShell>
   );
 }

@@ -43,7 +43,6 @@ export default function ProjectList({
   showEditButton = true,
   editingProjectId = "",
   editForm,
-  statusOptions = [],
   currencyOptions = [],
   engineers = [],
   selectedTeam = [],
@@ -82,7 +81,6 @@ export default function ProjectList({
               showCancel
               cancelLabel="Cancel edit"
               form={editForm}
-              statusOptions={statusOptions}
               currencyOptions={currencyOptions}
               engineers={engineers}
               selectedTeam={selectedTeam}
@@ -138,7 +136,13 @@ export default function ProjectList({
                 justifyContent={{ sm: "flex-end" }}
               >
                 {onViewTasks ? (
-                  <Button type="button" variant="outlined" onClick={() => onViewTasks(project)} disabled={saving}>
+                  <Button
+                    type="button"
+                    variant="outlined"
+                    onClick={() => onViewTasks(project)}
+                    disabled={saving}
+                    sx={{ width: { xs: "100%", sm: "auto" } }}
+                  >
                     Tasks
                   </Button>
                 ) : null}
@@ -148,6 +152,7 @@ export default function ProjectList({
                     variant="outlined"
                     onClick={() => onEdit(project)}
                     disabled={saving}
+                    sx={{ width: { xs: "100%", sm: "auto" } }}
                   >
                     Edit
                   </Button>
@@ -159,6 +164,7 @@ export default function ProjectList({
                     variant="outlined"
                     onClick={() => onArchive(project.id)}
                     disabled={saving}
+                    sx={{ width: { xs: "100%", sm: "auto" } }}
                   >
                     Archive
                   </Button>
@@ -169,6 +175,7 @@ export default function ProjectList({
                     color="error"
                     onClick={() => onDelete?.(project.id)}
                     disabled={saving}
+                    sx={{ alignSelf: { xs: "flex-end", sm: "center" } }}
                   >
                     <DeleteForeverIcon />
                   </IconButton>

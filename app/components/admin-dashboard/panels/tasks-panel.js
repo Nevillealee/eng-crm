@@ -3,7 +3,9 @@
 import { Button, Paper, Stack, Typography } from "@mui/material";
 import TaskForm from "../../admin/task-form";
 import TaskList from "../../admin/task-list";
+import CompactPanelSection from "../../compact-panel-section";
 import { FormSelectField, FormTextField } from "../../form-fields";
+import ResponsiveCreateSheet from "../../responsive-create-sheet";
 import {
   taskApprovalFilterOptions,
   taskCompletionFilterOptions,
@@ -48,6 +50,30 @@ export default function TasksPanel({
   const assigneeFilterOptions = [{ value: "all", label: "All assignees" }].concat(
     filterAssigneeOptions.map((assignee) => ({ value: assignee.id, label: assignee.name }))
   );
+  const activeFilterCount = [
+    taskProjectFilter !== "all",
+    taskAssigneeFilter !== "all",
+    taskApprovalFilter !== "all",
+    taskCompletionFilter !== "all",
+    taskDueFilter !== "all",
+    taskSearch.trim() !== "",
+  ].filter(Boolean).length;
+  const createTaskForm = (
+    <TaskForm
+      loading={loading}
+      saving={saving}
+      editingTaskId=""
+      showCancel
+      cancelLabel="Cancel"
+      form={taskForm}
+      projectOptions={projectOptions}
+      assigneeOptions={assigneeOptions}
+      parentTaskOptions={parentTaskOptions}
+      onFieldChange={onTaskFieldChange}
+      onSubmit={onSubmitTask}
+      onCancelEdit={onCloseCreateTaskForm}
+    />
+  );
 
   return (
     <Stack spacing={2}>
@@ -66,6 +92,7 @@ export default function TasksPanel({
                 variant="contained"
                 onClick={onOpenCreateTaskForm}
                 disabled={loading || saving}
+                sx={{ width: { xs: "100%", sm: "auto" } }}
               >
                 Create task
               </Button>
@@ -74,26 +101,17 @@ export default function TasksPanel({
           <Typography color="text.secondary">
             Manage project tasks, assignments, completion, and approvals.
           </Typography>
-          {showCreateTaskForm ? (
-            <TaskForm
-              loading={loading}
-              saving={saving}
-              editingTaskId=""
-              showCancel
-              cancelLabel="Cancel"
-              form={taskForm}
-              projectOptions={projectOptions}
-              assigneeOptions={assigneeOptions}
-              parentTaskOptions={parentTaskOptions}
-              onFieldChange={onTaskFieldChange}
-              onSubmit={onSubmitTask}
-              onCancelEdit={onCloseCreateTaskForm}
-            />
-          ) : null}
+          <ResponsiveCreateSheet open={showCreateTaskForm} onClose={onCloseCreateTaskForm}>
+            {createTaskForm}
+          </ResponsiveCreateSheet>
         </Stack>
       </Paper>
 
-      <Paper variant="outlined" sx={{ p: 3 }}>
+      <CompactPanelSection
+        title="Task filters"
+        summary={activeFilterCount ? `${activeFilterCount} active filter${activeFilterCount > 1 ? "s" : ""}` : "Search, assignee, status, and due date"}
+        defaultExpandedMobile={activeFilterCount > 0}
+      >
         <Stack spacing={2}>
           <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
             <FormTextField
@@ -140,7 +158,7 @@ export default function TasksPanel({
             />
           </Stack>
         </Stack>
-      </Paper>
+      </CompactPanelSection>
 
       <TaskList
         title="Visible tasks"

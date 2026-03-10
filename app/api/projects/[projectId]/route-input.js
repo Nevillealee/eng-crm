@@ -1,5 +1,5 @@
 import {
-  allowedProjectStatuses,
+  archivedProjectStatus,
   parseCostPhpInput,
   parseCurrencyCodeInput,
   parseDateInput,
@@ -21,12 +21,16 @@ export function parseProjectPatchInput(body) {
   const hasName = hasOwnProperty(source, "name");
   const hasClientName = hasOwnProperty(source, "clientName");
   const hasStatus = hasOwnProperty(source, "status");
+  const hasArchived = hasOwnProperty(source, "archived");
   const hasAdminNotes = hasOwnProperty(source, "adminNotes");
 
   const name = hasName && typeof source.name === "string" ? source.name.trim() : undefined;
   const clientName =
     hasClientName && typeof source.clientName === "string" ? source.clientName.trim() : undefined;
-  const status = hasStatus && typeof source.status === "string" ? source.status : undefined;
+  const requestedStatus = hasStatus && typeof source.status === "string" ? source.status.trim() : "";
+  const usesLegacyArchiveStatus = requestedStatus === archivedProjectStatus;
+  const archived =
+    hasArchived ? source.archived === true : usesLegacyArchiveStatus ? true : undefined;
   const hasCostPhp = hasOwnProperty(source, "costPhp");
   const costPhp = hasCostPhp ? parseCostPhpInput(source.costPhp) : undefined;
   const hasCurrencyCode = hasOwnProperty(source, "currencyCode");
@@ -48,10 +52,11 @@ export function parseProjectPatchInput(body) {
     hasName,
     hasClientName,
     hasStatus,
+    hasArchived,
     hasAdminNotes,
     name,
     clientName,
-    status,
+    archived,
     hasCostPhp,
     costPhp,
     hasCurrencyCode,
@@ -68,8 +73,12 @@ export function parseProjectPatchInput(body) {
 }
 
 export function getProjectPatchValidationError(input) {
-  if (typeof input.status === "string" && !allowedProjectStatuses.has(input.status)) {
-    return "Invalid project status.";
+  if (input.hasStatus && input.archived !== true) {
+    return "Project status is automatic and cannot be set manually.";
+  }
+
+  if (input.hasArchived && input.archived !== true) {
+    return "Archived must be true.";
   }
 
   if (input.hasCostPhp && input.costPhp === null) {
@@ -109,7 +118,7 @@ export function toProjectUpdateData(input) {
     clientName: input.hasClientName ? clientName : undefined,
     costPhp: input.costPhp,
     currencyCode: input.currencyCode,
-    status: input.status,
+    status: input.archived ? archivedProjectStatus : undefined,
     startDate: input.startDate,
     endDate: input.endDate,
     adminNotes: input.hasAdminNotes ? adminNotes : undefined,

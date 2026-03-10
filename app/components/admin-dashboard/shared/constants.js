@@ -19,12 +19,6 @@ export const availabilityColorByValue = {
   unavailable: "default",
 };
 
-export const projectStatusOptions = [
-  { value: "ongoing", label: "Ongoing" },
-  { value: "completed", label: "Completed" },
-  { value: "archived", label: "Archived" },
-];
-
 export const projectSortByOptions = [
   { value: "date", label: "Date" },
   { value: "cost", label: "Cost" },

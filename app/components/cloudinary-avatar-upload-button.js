@@ -33,6 +33,8 @@ function resolveUploadUrl(result) {
 export default function CloudinaryAvatarUploadButton({
   disabled = false,
   label = "Upload avatar",
+  fullWidth = false,
+  sx,
   onUpload,
   onError,
 }) {
@@ -42,9 +44,9 @@ export default function CloudinaryAvatarUploadButton({
         type="button"
         variant="outlined"
         disabled={disabled}
-        onClick={() =>
-          onError?.("Avatar upload is unavailable. Missing configuration.s")
-        }
+        fullWidth={fullWidth}
+        sx={sx}
+        onClick={() => onError?.("Avatar upload is unavailable. Missing configuration.")}
       >
         {label}
       </Button>
@@ -75,7 +77,14 @@ export default function CloudinaryAvatarUploadButton({
       }}
     >
       {({ open }) => (
-        <Button type="button" variant="outlined" disabled={disabled} onClick={() => open()}>
+        <Button
+          type="button"
+          variant="outlined"
+          disabled={disabled}
+          fullWidth={fullWidth}
+          sx={sx}
+          onClick={() => open()}
+        >
           {label}
         </Button>
       )}

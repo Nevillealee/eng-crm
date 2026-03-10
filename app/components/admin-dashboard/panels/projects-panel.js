@@ -3,12 +3,13 @@
 import { Button, Paper, Stack, Typography } from "@mui/material";
 import { PROJECT_CURRENCIES } from "../../../constants/project-currencies";
 import ProjectForm from "../../admin/project-form";
+import CompactPanelSection from "../../compact-panel-section";
 import { FormSelectField } from "../../form-fields";
 import ProjectList from "../../admin/project-list";
+import ResponsiveCreateSheet from "../../responsive-create-sheet";
 import {
   projectSortByOptions,
   projectSortDirectionOptions,
-  projectStatusOptions,
 } from "../shared/constants";
 
 export default function ProjectsPanel({
@@ -37,6 +38,24 @@ export default function ProjectsPanel({
   onDeleteProject,
   onResetProjectForm,
 }) {
+  const createProjectForm = (
+    <ProjectForm
+      loading={loading}
+      saving={saving}
+      editingProjectId=""
+      showCancel
+      cancelLabel="Cancel"
+      form={projectForm}
+      currencyOptions={PROJECT_CURRENCIES}
+      engineers={assignableEngineers}
+      selectedTeam={selectedTeam}
+      onFieldChange={onProjectFieldChange}
+      onTeamChange={onProjectTeamChange}
+      onSubmit={onSubmitProject}
+      onCancelEdit={onCloseCreateProjectForm}
+    />
+  );
+
   return (
     <Stack spacing={2}>
       <Paper variant="outlined" sx={{ p: 3 }}>
@@ -54,10 +73,17 @@ export default function ProjectsPanel({
                 variant="outlined"
                 onClick={() => onOpenProjectTasks?.()}
                 disabled={loading || saving}
+                sx={{ width: { xs: "100%", sm: "auto" } }}
               >
                 Open tasks
               </Button>
-              <Button type="button" variant="outlined" onClick={() => onExportCsv("/api/admin/export/projects")} disabled={loading || saving}>
+              <Button
+                type="button"
+                variant="outlined"
+                onClick={() => onExportCsv("/api/admin/export/projects")}
+                disabled={loading || saving}
+                sx={{ width: { xs: "100%", sm: "auto" } }}
+              >
                 Export CSV
               </Button>
               {!showCreateProjectForm ? (
@@ -66,6 +92,7 @@ export default function ProjectsPanel({
                   variant="contained"
                   onClick={onOpenCreateProjectForm}
                   disabled={loading || saving}
+                  sx={{ width: { xs: "100%", sm: "auto" } }}
                 >
                   Create project
                 </Button>
@@ -73,28 +100,16 @@ export default function ProjectsPanel({
             </Stack>
           </Stack>
 
-          {showCreateProjectForm ? (
-            <ProjectForm
-              loading={loading}
-              saving={saving}
-              editingProjectId=""
-              showCancel
-              cancelLabel="Cancel"
-              form={projectForm}
-              statusOptions={projectStatusOptions}
-              currencyOptions={PROJECT_CURRENCIES}
-              engineers={assignableEngineers}
-              selectedTeam={selectedTeam}
-              onFieldChange={onProjectFieldChange}
-              onTeamChange={onProjectTeamChange}
-              onSubmit={onSubmitProject}
-              onCancelEdit={onCloseCreateProjectForm}
-            />
-          ) : null}
+          <ResponsiveCreateSheet open={showCreateProjectForm} onClose={onCloseCreateProjectForm}>
+            {createProjectForm}
+          </ResponsiveCreateSheet>
         </Stack>
       </Paper>
 
-      <Paper variant="outlined" sx={{ p: 3 }}>
+      <CompactPanelSection
+        title="Project controls"
+        summary={`Sorted by ${projectSortBy} ${projectSortDirection}`}
+      >
         <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ xs: "stretch", sm: "center" }}>
           <FormSelectField
             label="Sort by"
@@ -113,11 +128,11 @@ export default function ProjectsPanel({
             options={projectSortDirectionOptions}
           />
         </Stack>
-      </Paper>
+      </CompactPanelSection>
 
       <ProjectList
-        title="Active projects"
-        emptyMessage="No active projects."
+        title="Current and completed projects"
+        emptyMessage="No current or completed projects."
         projects={sortedActiveProjects}
         saving={saving}
         onEdit={onEditProject}
@@ -126,7 +141,6 @@ export default function ProjectsPanel({
         loading={loading}
         editingProjectId={editingProjectId}
         editForm={projectForm}
-        statusOptions={projectStatusOptions}
         currencyOptions={PROJECT_CURRENCIES}
         engineers={assignableEngineers}
         selectedTeam={selectedTeam}

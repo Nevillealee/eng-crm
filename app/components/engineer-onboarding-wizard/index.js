@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { Alert, Box, Button, Container, Paper, Stack, Typography } from "@mui/material";
+import { Alert, Box, Button, Stack, Typography } from "@mui/material";
 import { emptyHoliday, nextDateInputValue } from "../profile-form-shared";
+import { CenteredPageShell } from "../page-shell";
 import { MAX_ONBOARDING_STEP, MIN_ONBOARDING_STEP } from "./constants";
 import {
   clampOnboardingStep,
@@ -167,80 +168,64 @@ export default function EngineerOnboardingWizard({ initialStep = MIN_ONBOARDING_
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        background: "linear-gradient(135deg, #f5f5f7 0%, #e8eefc 100%)",
-      }}
-    >
-      <Container maxWidth="md">
-        <Paper sx={{ p: { xs: 4, md: 6 } }}>
-          <Stack spacing={3}>
-            <Stack spacing={1}>
-              <Typography variant="overline" color="text.secondary">
-                Devcombine Engineering Portal
-              </Typography>
-              <Typography variant="h4">Engineer onboarding</Typography>
-              <Typography color="text.secondary">
-                Step {step} of {MAX_ONBOARDING_STEP}. Complete onboarding to access your engineer
-                account page.
-              </Typography>
-            </Stack>
+    <CenteredPageShell maxWidth="md">
+      <Stack spacing={3}>
+        <Stack spacing={1}>
+          <Typography variant="overline" color="text.secondary">
+            Devcombine Engineering Portal
+          </Typography>
+          <Typography variant="h4">Engineer onboarding</Typography>
+          <Typography color="text.secondary">
+            Step {step} of {MAX_ONBOARDING_STEP}. Complete onboarding to access your engineer
+            account page.
+          </Typography>
+        </Stack>
 
-            {error ? <Alert severity="error">{error}</Alert> : null}
-            {info ? <Alert severity="success">{info}</Alert> : null}
+        {error ? <Alert severity="error">{error}</Alert> : null}
+        {info ? <Alert severity="success">{info}</Alert> : null}
 
-            <Stack spacing={2}>
-              <OnboardingStepContent
-                step={step}
-                form={form}
-                loading={loading}
-                saving={saving}
-                onSkillsChange={(skills) => setForm((prev) => ({ ...prev, skills }))}
-                onFieldChange={handleFieldChange}
-                onHolidayChange={handleHolidayChange}
-                onRemoveHoliday={removeHoliday}
-                onAddHoliday={addHoliday}
-              />
+        <Stack spacing={2}>
+          <OnboardingStepContent
+            step={step}
+            form={form}
+            loading={loading}
+            saving={saving}
+            onSkillsChange={(skills) => setForm((prev) => ({ ...prev, skills }))}
+            onFieldChange={handleFieldChange}
+            onHolidayChange={handleHolidayChange}
+            onRemoveHoliday={removeHoliday}
+            onAddHoliday={addHoliday}
+          />
 
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-                <Button
-                  type="button"
-                  variant="outlined"
-                  onClick={goBack}
-                  disabled={loading || saving || step === MIN_ONBOARDING_STEP}
-                >
-                  Back
-                </Button>
-                {step < MAX_ONBOARDING_STEP ? (
-                  <Button
-                    type="button"
-                    variant="contained"
-                    onClick={goNext}
-                    disabled={loading || saving}
-                  >
-                    {saving ? "Saving..." : "Continue"}
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="contained"
-                    onClick={finishOnboarding}
-                    disabled={loading || saving}
-                  >
-                    {saving ? "Saving profile..." : "Save profile"}
-                  </Button>
-                )}
-                <Button type="button" variant="text" onClick={handleSignOut} disabled={saving}>
-                  Sign out
-                </Button>
-              </Stack>
-            </Stack>
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+            <Button
+              type="button"
+              variant="outlined"
+              onClick={goBack}
+              disabled={loading || saving || step === MIN_ONBOARDING_STEP}
+            >
+              Back
+            </Button>
+            {step < MAX_ONBOARDING_STEP ? (
+              <Button type="button" variant="contained" onClick={goNext} disabled={loading || saving}>
+                {saving ? "Saving..." : "Continue"}
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="contained"
+                onClick={finishOnboarding}
+                disabled={loading || saving}
+              >
+                {saving ? "Saving profile..." : "Save profile"}
+              </Button>
+            )}
+            <Button type="button" variant="text" onClick={handleSignOut} disabled={saving}>
+              Sign out
+            </Button>
           </Stack>
-        </Paper>
-      </Container>
-    </Box>
+        </Stack>
+      </Stack>
+    </CenteredPageShell>
   );
 }
