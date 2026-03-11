@@ -6,18 +6,6 @@ const { PrismaPg } = require("@prisma/adapter-pg");
 
 const sharedEnvPath = resolve(process.cwd(), ".env");
 const developmentEnvPath = resolve(process.cwd(), "development.env");
-const SEED_USERS = [
-  {
-    email: "nevillealee+1@gmail.com",
-    password: "Password!",
-    isAdmin: true,
-  },
-  {
-    email: "nevillealee@gmail.com",
-    password: "Password!",
-    isAdmin: false,
-  },
-];
 
 if (existsSync(sharedEnvPath)) {
   loadEnv({ path: sharedEnvPath, override: false, quiet: true });
@@ -27,10 +15,32 @@ if (process.env.NODE_ENV !== "production" && existsSync(developmentEnvPath)) {
   loadEnv({ path: developmentEnvPath, override: true, quiet: true });
 }
 
+function normalizeSeedValue(value, fallbackValue) {
+  if (typeof value !== "string") {
+    return fallbackValue;
+  }
+
+  const normalizedValue = value.trim();
+
+  return normalizedValue || fallbackValue;
+}
+
+const SEED_USERS = [
+  {
+    email: normalizeSeedValue(process.env.ADMIN_MAIL, "admin@example.com"),
+    password: normalizeSeedValue(process.env.ADMIN_PW, "Password!"),
+    isAdmin: true,
+  },
+  {
+    email: "engineer@example.com",
+    password: "Password!",
+    isAdmin: false,
+  },
+];
+
 function resolveConnectionString() {
   const rawConnectionString =
     process.env.POSTGRES_URL ||
-    process.env.POSTGRES_URL_NON_POOLING ||
     process.env.POSTGRES_PRISMA_URL;
 
   if (!rawConnectionString) {

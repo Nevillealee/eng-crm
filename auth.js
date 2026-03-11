@@ -21,8 +21,9 @@ async function getUserRoleSnapshot(userId) {
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
+  trustHost: true,
   session: { strategy: "jwt" },
-  secret: process.env.NEXTAUTH_SECRET || process.env.SUPABASE_JWT_SECRET,
+  secret: process.env.NEXTAUTH_SECRET,
   pages: {
     signIn: "/login",
   },

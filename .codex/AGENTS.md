@@ -25,7 +25,7 @@ npx prisma generate   # outputs to generated/prisma/, not node_modules
 yarn dev              # starts Next.js dev server
 ```
 
-Required env vars (see `.env` or hosting dashboard): `POSTGRES_URL` (or `POSTGRES_URL_NON_POOLING` / `POSTGRES_PRISMA_URL`), `NEXTAUTH_SECRET`, `EMAIL_USERNAME`, `EMAIL_PASSWORD`, `NEXT_PUBLIC_APP_URL`.
+Required env vars (see `.env` or hosting dashboard): `POSTGRES_URL` (or  / `POSTGRES_PRISMA_URL`), `NEXTAUTH_SECRET`, `EMAIL_USERNAME`, `EMAIL_PASSWORD`, `NEXT_PUBLIC_APP_URL`.
 
 ## Build & lint
 

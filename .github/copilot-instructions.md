@@ -28,7 +28,7 @@
 ### Database ([prisma/schema.prisma](prisma/schema.prisma))
 - Models: `User`, `Account`, `Session`, `VerificationToken` (standard NextAuth schema extended with `firstName`, `lastName`, `avatar` as `Bytes`, `avatarMimeType`, `lastLogin`).
 - Generator outputs to `generated/prisma/` (not the default `node_modules`). Import the client from `generated/prisma/client`.
-- Prisma client singleton: [lib/prisma.ts](lib/prisma.ts) — resolves connection string from `POSTGRES_URL` / `POSTGRES_URL_NON_POOLING` / `POSTGRES_PRISMA_URL`, auto-adds `uselibpqcompat` for SSL.
+- Prisma client singleton: [lib/prisma.ts](lib/prisma.ts) — resolves connection string from `POSTGRES_URL`  / `POSTGRES_PRISMA_URL`, auto-adds `uselibpqcompat` for SSL.
 - Build script: `prisma generate && next build` — always runs generation first.
 
 ### Page routing
@@ -102,7 +102,7 @@ Use strong visual hierarchy and consistent spacing to keep the footer scannable.
 - Prisma commands: `npx prisma generate`, `npx prisma migrate dev`, `npx prisma studio`
 
 ## Environment variables
-`POSTGRES_URL`, `POSTGRES_URL_NON_POOLING`, `POSTGRES_PRISMA_URL` (at least one), `NEXTAUTH_SECRET` or `SUPABASE_JWT_SECRET`, `EMAIL_USERNAME`, `EMAIL_PASSWORD`, `NEXT_PUBLIC_APP_URL` or `NEXTAUTH_URL` (for verification links).
+`POSTGRES_URL`, `POSTGRES_PRISMA_URL` (at least one), `NEXTAUTH_SECRET` or `SUPABASE_JWT_SECRET`, `EMAIL_USERNAME`, `EMAIL_PASSWORD`, `NEXT_PUBLIC_APP_URL` or `NEXTAUTH_URL` (for verification links).
 
 ## Notes for agents
 - When adding routes, use the App Router convention under `app/`.

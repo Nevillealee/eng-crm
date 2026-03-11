@@ -5,6 +5,7 @@ This backlog is the working source of truth for MVP scope. Keep it updated as re
 Legend:
 - P0: required for MVP
 - P1: strongly desired, can slip
+- P2: post-MVP / future enhancement
 
 ## P0 - Authentication and access control
 Status: Complete (as of February 26, 2026)
@@ -70,7 +71,7 @@ Status: Complete (as of February 26, 2026)
   - Implemented in current build via `/api/projects`, `/api/projects/[projectId]`, and `/admin` dashboard workflows.
 
 ## P0 - Task management
-Status: Planned
+Status: Complete (as of March 11, 2026)
 
 - Objective:
   - Add project-scoped task management across engineer and admin dashboards.
@@ -249,6 +250,7 @@ Status: Planned
   - Admins can open the Tasks view from the admin navigation, from the Projects view, from a project card, and from the Engineers view to see tasks filtered to a selected engineer.
   - Task payloads include the requested fields plus the derived `parent` object.
   - `parent` resolves to either the parent task or the owning project for top-level tasks.
+  - Implemented in current build via Prisma `Task`, `/api/tasks`, `/api/tasks/[taskId]`, engineer `Tasks` panel, admin `Tasks` panel, and related integration/UI coverage.
 
 ## P1 - Quality and operational hardening
 Status: Complete (as of February 26, 2026)
@@ -268,6 +270,7 @@ Status: Complete (as of February 26, 2026)
   - Store a URL reference on the `User` record instead of raw bytes.
   - Update upload (signup, profile) and read paths (admin engineer list, engineer account) accordingly.
 - Mobile UI redesign:
+  - Status: Complete (as of March 11, 2026).
   - Redesign the site's appearance for mobile screens across authentication, onboarding, engineer, and admin views.
   - Apply UI/UX best practices for mobile using MUI responsive design patterns (breakpoints, touch targets, spacing, typography scale, and navigation).
   - Use this guidance as a design reference: https://medium.com/@WebdesignerDepot/essential-tips-for-converting-a-desktop-site-to-mobile-3686c35a7364
@@ -276,7 +279,112 @@ Status: Complete (as of February 26, 2026)
     - Phase 2: Engineer panel-by-panel mobile redesign (Personal panel, Projects panel, and any additional engineer subviews), continuing the same https://medium.com/@pepper_square/mobile-ux-design-dos-donts-b68a4a990d5b guidance (excluding accessibility-specific guidance).
     - Phase 3: Admin dashboard shell mobile redesign (layout, navigation drawer/menu behavior, overview cards responsiveness).
     - Phase 4: Admin panel-by-panel mobile redesign (Dashboard, Engineers, Personal, Projects, Audit, and related admin subviews).
-- Admin calendar view:
-  - Add a calendar panel to the admin dashboard using CalendarJS react components.
-  - Surfaces engineer time-off / upcoming holidays and project start/end dates in a unified calendar.
-  - Should support month/week views and be filterable by engineer or project.
+
+## P0 - Admin calendar view
+Status: Planned
+
+- Objective:
+  - Finish MVP with a unified admin calendar panel before dockerization / production hardening begins.
+  - Add a `Calendar` panel to the existing `/admin` dashboard rather than creating a separate route.
+  - Surface two operational event types in one view:
+    - engineer upcoming holidays / time off from `users.upcoming_holidays`
+    - project milestones from `projects.start_date` and `projects.end_date`
+- Scope constraints for MVP:
+  - Read-only calendar for MVP. Editing continues through existing `Personal information` and `Projects` panels.
+  - Desktop-first dense admin view, but must preserve the completed mobile admin redesign patterns.
+  - No new database tables required for MVP.
+  - Use CalendarJS only: `@calendarjs/ce` with React bindings from `@calendarjs/ce/dist/react` and the packaged stylesheet from `@calendarjs/ce/dist/style.css`.
+  - Do not add any other calendar/date UI dependencies for this feature.
+  - Do not expand scope to task due dates, staffing allocations, drag-and-drop scheduling, or external calendar sync.
+- Existing data sources already available:
+  - `/api/admin/engineers` already returns `id`, engineer identity fields, `availabilityStatus`, and `upcomingHolidays`.
+  - `/api/projects` already returns admin-visible project metadata including `id`, `name`, `startDate`, `endDate`, `status`, and team members.
+  - The current admin dashboard already loads both datasets on first render, so MVP can derive calendar events client-side without a new API.
+- CalendarJS implementation constraints from official docs:
+  - Install from a single package: `npm install @calendarjs/ce`.
+  - React usage should import from `@calendarjs/ce/dist/react`.
+  - `Schedule` documents `type` values `day`, `week`, and `weekdays`; it does not document a month scheduler view.
+  - `Calendar` supports inline month-style rendering, date navigation, and per-date event markers via its `data` prop.
+  - `Helpers` is available from the same package for date formatting/parsing when useful, so no extra date helper package should be introduced.
+- UX requirements:
+  - Add `Calendar` to the admin dashboard navigation between `Projects` and `Tasks`.
+  - Support `month` and `week` views using CalendarJS components only:
+    - month view = CalendarJS `Calendar` in inline mode
+    - week view = CalendarJS `Schedule` with `type=\"week\"`
+  - Include quick filters for:
+    - event type: `all` | `time_off` | `project_milestone`
+    - engineer: `all` + engineer list
+    - project: `all` + project list
+  - Event presentation:
+    - month view should show date-level markers and a compact selected-date summary list beside or below the calendar
+    - week view should show titled schedule entries for the selected week
+    - time off entries show engineer name + holiday label
+    - project events show project name + `Start` or `End`
+    - color treatment distinguishes time off from project milestones while staying within the current light-theme admin system
+  - Interaction:
+    - month and week views should share the same selected date / visible period state
+    - clicking a time-off event should switch to the `Engineers` panel with that engineer highlighted/filtered
+    - clicking a project event should switch to the `Projects` panel with that project ready for review/edit
+  - Empty/error states:
+    - clear empty state when no events match active filters
+    - non-blocking error state if event derivation fails on malformed dates
+- Technical implementation plan:
+  - Phase 1: dependency and panel scaffold
+    - add `@calendarjs/ce` only
+    - import CalendarJS React components from `@calendarjs/ce/dist/react`
+    - import the packaged stylesheet from `@calendarjs/ce/dist/style.css`
+    - create `app/components/admin-dashboard/panels/calendar-panel.js`
+    - register the panel in `app/components/admin-dashboard/shared/constants.js`, navigation, and `AdminDashboard`
+  - Phase 2: event normalization helpers
+    - add a shared mapper that converts engineer holiday JSON and project dates into two CalendarJS-ready datasets:
+      - month marker data for `Calendar`
+      - week schedule event data for `Schedule`
+    - normalize a canonical internal event shape first, including:
+      - `id`
+      - `type` (`time_off` or `project_milestone`)
+      - `title`
+      - `start`
+      - `end`
+      - `allDay`
+      - `engineerId` (nullable)
+      - `projectId` (nullable)
+      - `meta` for label/status/details
+    - map canonical events into:
+      - `Calendar` marker records keyed by date for month rendering
+      - `Schedule` event objects with `guid`, `title`, `date`, `start`, `end`, `color`, and `readonly`
+    - represent all-day operational events in week view using a consistent time block convention documented in code, since `Schedule` expects time-based events
+    - validate date parsing defensively and skip malformed records instead of breaking the panel
+  - Phase 3: filtering and interactions
+    - add admin dashboard state for:
+      - calendar view mode (`month` or `week`)
+      - selected date
+      - calendar filters
+    - derive filtered canonical events with `useMemo` from already-loaded `engineers` and `projects`
+    - derive CalendarJS component props from the canonical events without additional libraries
+    - wire event click handlers back into existing dashboard actions for engineer/project drill-in
+  - Phase 4: visual integration and responsive tuning
+    - style the calendar shell with the same MUI card/surface language used in other admin panels
+    - ensure the toolbar, filters, month calendar, selected-date event summary, and week schedule remain usable on mobile without undoing the completed redesign
+    - keep month/week switching obvious and low-friction
+    - avoid fighting CalendarJS internals; prefer wrapping and theming its provided output rather than layering custom calendar mechanics on top
+  - Phase 5: test coverage
+    - unit tests for event normalization and filter behavior
+    - UI behavior tests for navigation visibility, empty states, and event click drill-ins
+    - regression coverage that the admin dashboard still renders when one source contains invalid/missing dates
+- Recommended file targets:
+  - `app/components/admin-dashboard/index.js`
+  - `app/components/admin-dashboard/shared/constants.js`
+  - `app/components/admin-dashboard/shared/navigation.js`
+  - `app/components/admin-dashboard/panels/calendar-panel.js`
+  - `app/components/admin-dashboard/shared/calendar-events.js` (new)
+  - `tests/ui/admin-dashboard/calendar-panel.behavior.test.js` (new)
+  - `tests/ui/admin-dashboard/calendar-events.test.js` (new)
+- Acceptance criteria:
+  - Admin navigation includes a `Calendar` panel.
+  - Admin can switch between a CalendarJS month view and a CalendarJS week view.
+  - Calendar shows engineer time off and project start/end events in one unified view.
+  - Admin can filter calendar results by engineer and by project.
+  - Clicking an event routes the admin into the relevant existing workflow context inside the dashboard.
+  - Invalid or incomplete source dates do not crash the admin dashboard.
+  - Mobile admin layout remains functional after adding the new panel.
+  - The feature ships using `@calendarjs/ce` only, with no additional calendar/date UI dependency added for the admin calendar.
