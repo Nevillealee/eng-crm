@@ -12,7 +12,6 @@ function buildTaskRecord(data, overrides = {}) {
     completedAt: data.completedAt ?? null,
     completedById: data.completedById ?? null,
     completed: data.completed,
-    approvalStatus: data.approvalStatus,
     dueOn: data.dueOn ?? null,
     notes: data.notes ?? null,
     resourceType: "task",
@@ -108,7 +107,6 @@ describe("Given task form persistence", () => {
       notes: "Review before client handoff.",
       parentTaskId: "task-parent",
       completed: true,
-      approvalStatus: "approved",
     };
 
     const { POST } = await import("../../app/api/tasks/route.js");
@@ -126,7 +124,6 @@ describe("Given task form persistence", () => {
         assigneeId: "eng-2",
         assignedById: "admin-1",
         createdByUserId: "admin-1",
-        approvalStatus: "approved",
         notes: "Review before client handoff.",
         parentTaskId: "task-parent",
         completed: true,
@@ -157,7 +154,6 @@ describe("Given task form persistence", () => {
       completedAt: null,
       completedById: null,
       completed: false,
-      approvalStatus: "pending",
       dueOn: new Date("2026-05-10T00:00:00.000Z"),
       notes: "Need final screenshots.",
     });
@@ -172,7 +168,6 @@ describe("Given task form persistence", () => {
         completedAt: new Date("2026-05-08T00:00:00.000Z"),
         completedById: "admin-1",
         completed: true,
-        approvalStatus: "approved",
         dueOn: new Date("2026-05-12T00:00:00.000Z"),
         notes: "Screenshots included.",
       },
@@ -207,7 +202,6 @@ describe("Given task form persistence", () => {
       dueOn: "2026-05-12",
       notes: "Screenshots included.",
       completed: true,
-      approvalStatus: "approved",
     };
 
     const { PATCH } = await import("../../app/api/tasks/[taskId]/route.js");
@@ -228,7 +222,6 @@ describe("Given task form persistence", () => {
         notes: "Screenshots included.",
         completed: true,
         completedById: "admin-1",
-        approvalStatus: "approved",
       })
     );
     expect(updateCall.data.dueOn).toBeInstanceOf(Date);

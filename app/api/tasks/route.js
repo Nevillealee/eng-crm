@@ -8,7 +8,6 @@ import {
   isProjectMember,
   parseDateInput,
   parseOptionalId,
-  parseTaskApprovalStatus,
   parseTaskCompletedValue,
   parseTaskName,
   parseTaskNotes,
@@ -96,7 +95,6 @@ export async function POST(request) {
     const projectId = parseOptionalId(input.projectId);
     const name = parseTaskName(input.name);
     const requestedAssigneeId = parseOptionalId(input.assigneeId ?? input.assignee);
-    const requestedApprovalStatus = parseTaskApprovalStatus(input.approvalStatus ?? input.approval_status);
     const requestedCompleted = parseTaskCompletedValue(input.completed);
     const parentTaskId = parseOptionalId(input.parentTaskId);
     const notes = parseTaskNotes(input.notes);
@@ -118,24 +116,23 @@ export async function POST(request) {
       return NextResponse.json({ ok: false, error: "Invalid completed flag." }, { status: 400 });
     }
 
-    if (
-      (Object.prototype.hasOwnProperty.call(input, "approvalStatus") ||
-        Object.prototype.hasOwnProperty.call(input, "approval_status")) &&
-      requestedApprovalStatus === null
-    ) {
-      return NextResponse.json({ ok: false, error: "Invalid approval status." }, { status: 400 });
+    if (Object.prototype.hasOwnProperty.call(input, "approvalStatus")) {
+      return NextResponse.json(
+        { ok: false, error: "Field approvalStatus has been removed." },
+        { status: 400 }
+      );
+    }
+
+    if (Object.prototype.hasOwnProperty.call(input, "approval_status")) {
+      return NextResponse.json(
+        { ok: false, error: "Field approval_status has been removed." },
+        { status: 400 }
+      );
     }
 
     if (!isAdmin && requestedAssigneeId && requestedAssigneeId !== session.user.id) {
       return NextResponse.json(
         { ok: false, error: "Engineers can only assign tasks to themselves." },
-        { status: 403 }
-      );
-    }
-
-    if (!isAdmin && requestedApprovalStatus && requestedApprovalStatus !== "pending") {
-      return NextResponse.json(
-        { ok: false, error: "Engineers cannot approve or reject tasks." },
         { status: 403 }
       );
     }
@@ -189,7 +186,6 @@ export async function POST(request) {
     }
 
     const completed = requestedCompleted === true;
-    const approvalStatus = isAdmin ? requestedApprovalStatus || "pending" : "pending";
     const now = new Date();
     const task = await prisma.task.create({
       data: {
@@ -202,7 +198,6 @@ export async function POST(request) {
         completed,
         completedAt: completed ? now : null,
         completedById: completed ? session.user.id : null,
-        approvalStatus,
         dueOn,
         notes: notes || null,
         resourceType: "task",
@@ -224,7 +219,6 @@ export async function POST(request) {
           projectId: task.projectId,
           projectName: task.project?.name || "",
           assigneeId: task.assigneeId,
-          approvalStatus: task.approvalStatus,
           completed: task.completed,
         },
       });

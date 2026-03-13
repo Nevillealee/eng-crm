@@ -15,7 +15,6 @@ const contentSecurityPolicy = `
 `;
 
 const nextConfig = {
-  output: "standalone",
   serverExternalPackages: ["geoip-lite"],
   async headers() {
     return [

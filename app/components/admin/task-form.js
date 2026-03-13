@@ -1,7 +1,6 @@
 "use client";
 
 import { Box, Button, Checkbox, FormControlLabel, MenuItem, Stack, TextField, Typography } from "@mui/material";
-import { taskApprovalStatusOptions } from "../tasks/shared";
 
 export default function TaskForm({
   loading,
@@ -90,21 +89,6 @@ export default function TaskForm({
               ))}
             </TextField>
           </Stack>
-          <TextField
-            select
-            label="Approval status"
-            name="approvalStatus"
-            value={form.approvalStatus}
-            onChange={onFieldChange}
-            disabled={loading || saving}
-            fullWidth
-          >
-            {taskApprovalStatusOptions.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </TextField>
           <FormControlLabel
             control={
               <Checkbox

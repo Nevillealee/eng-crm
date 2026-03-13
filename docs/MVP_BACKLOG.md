@@ -78,8 +78,6 @@ Status: Complete (as of March 11, 2026)
   - Engineers need a `Tasks` section in the engineer side panel with task creation plus a filterable list.
   - Admins need a `Tasks` view in the admin dashboard that can be opened directly, from the Projects view, from a project card, or from the Engineers view to show tasks assigned to a selected engineer.
 - Data model and schema:
-  - Add Prisma enums:
-    - `TaskApprovalStatus`: `pending` | `approved` | `rejected`
   - Add Prisma `Task` model with logical task fields:
     - `id`
     - `project_id` (required)
@@ -89,7 +87,6 @@ Status: Complete (as of March 11, 2026)
     - `completed_at`
     - `completed_by` (`user_id` for now)
     - `completed` boolean
-    - `approval_status`
     - `due_on`
     - `notes`
     - `resource_type` with fixed value `task`
@@ -112,7 +109,6 @@ Status: Complete (as of March 11, 2026)
     - `project_id`
     - `assignee`
     - `created_by_user_id`
-    - `approval_status`
     - `completed`
     - `due_on`
     - `parent_task_id`
@@ -121,12 +117,11 @@ Status: Complete (as of March 11, 2026)
     - Full CRUD on all tasks.
     - Can create tasks for themselves or for engineers.
     - Can assign and reassign tasks to engineers.
-    - Can set `approval_status` and can complete/uncomplete tasks on behalf of an engineer.
+    - Can complete/uncomplete tasks on behalf of an engineer.
   - Engineer:
     - Can create tasks only for themselves.
     - Can read/update/delete tasks when they are either the creator or the current assignee.
     - Cannot assign tasks to another user; only admins can assign or reassign tasks to someone else.
-    - Cannot directly approve or reject tasks; `approval_status` is admin-managed for MVP.
   - Task membership rules:
     - `project_id` is required for MVP so every task belongs to a project.
     - Engineers can only create tasks for projects they are assigned to.
@@ -159,7 +154,6 @@ Status: Complete (as of March 11, 2026)
     - `projectId`
     - `assigneeId`
     - `createdBy`
-    - `approvalStatus`
     - `completed`
     - `due`
     - `q` for task name search
@@ -175,7 +169,6 @@ Status: Complete (as of March 11, 2026)
   - Engineer task filters for MVP:
     - project
     - completion (`open`, `completed`, `all`)
-    - approval status
     - due bucket (`overdue`, `due today`, `upcoming`, `no due date`, `all`)
     - search by task name
   - Add project-context entry points so an engineer can open the Tasks panel from the existing Projects panel with `projectId` preselected in the task form and filter state.
@@ -193,11 +186,9 @@ Status: Complete (as of March 11, 2026)
     - notes
     - parent task
     - completed toggle
-    - approval status
   - Admin task list filters for MVP:
     - project
     - assignee
-    - approval status
     - completion
     - due bucket
     - task name search
@@ -215,13 +206,10 @@ Status: Complete (as of March 11, 2026)
     - `task.deleted`
     - `task.assigned`
     - `task.completed`
-    - `task.approved`
-    - `task.rejected`
   - Audit metadata should capture:
     - task id and name
     - project id and project name
     - old/new assignee
-    - old/new approval state
     - completion metadata changes
 - Implementation sequence:
   1. Add Prisma `Task` model, enums, relations, indexes, and migration.
@@ -245,8 +233,8 @@ Status: Complete (as of March 11, 2026)
   - Engineers see a `Tasks` section in the engineer side panel after onboarding.
   - Engineers can create self-assigned tasks for projects they belong to.
   - Engineers can update, complete, uncomplete, and delete tasks when they created the task or are the current assignee.
-  - Engineers cannot assign tasks to another user and cannot directly set `approval_status` to `approved` or `rejected`.
-  - Admins can create tasks, assign tasks to engineers, reassign tasks, approve/reject tasks, and manage all tasks from a dedicated admin Tasks view.
+  - Engineers cannot assign tasks to another user.
+  - Admins can create tasks, assign tasks to engineers, reassign tasks, and manage all tasks from a dedicated admin Tasks view.
   - Admins can open the Tasks view from the admin navigation, from the Projects view, from a project card, and from the Engineers view to see tasks filtered to a selected engineer.
   - Task payloads include the requested fields plus the derived `parent` object.
   - `parent` resolves to either the parent task or the owning project for top-level tasks.

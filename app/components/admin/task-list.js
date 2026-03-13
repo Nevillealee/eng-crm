@@ -5,7 +5,6 @@ import { Alert, Button, Chip, IconButton, Paper, Stack, Typography } from "@mui/
 import TaskForm from "./task-form";
 import {
   formatTaskDateLabel,
-  taskApprovalColor,
   taskCompletionColor,
   taskUserLabel,
 } from "../tasks/shared";
@@ -87,12 +86,6 @@ export default function TaskList({
                     size="small"
                     color={taskCompletionColor(task.completed)}
                     label={task.completed ? "Completed" : "Open"}
-                  />
-                  <Chip
-                    size="small"
-                    color={taskApprovalColor(task.approvalStatus)}
-                    label={task.approvalStatus}
-                    sx={{ textTransform: "capitalize" }}
                   />
                 </Stack>
               </Stack>

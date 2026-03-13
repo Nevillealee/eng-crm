@@ -1,15 +1,5 @@
 "use client";
 
-export const taskApprovalStatusOptions = [
-  { value: "pending", label: "Pending" },
-  { value: "approved", label: "Approved" },
-  { value: "rejected", label: "Rejected" },
-];
-
-export const taskApprovalFilterOptions = [{ value: "all", label: "All approval statuses" }].concat(
-  taskApprovalStatusOptions
-);
-
 export const taskCompletionFilterOptions = [
   { value: "all", label: "All tasks" },
   { value: "open", label: "Open tasks" },
@@ -46,18 +36,6 @@ export function formatTaskDateLabel(value) {
   return parsed ? parsed.toLocaleDateString() : "No due date";
 }
 
-export function taskApprovalColor(status) {
-  if (status === "approved") {
-    return "success";
-  }
-
-  if (status === "rejected") {
-    return "error";
-  }
-
-  return "warning";
-}
-
 export function taskCompletionColor(completed) {
   return completed ? "success" : "default";
 }
@@ -74,7 +52,6 @@ export function filterTasks({
   tasks,
   projectId = "all",
   assigneeId = "all",
-  approvalStatus = "all",
   completion = "all",
   due = "all",
   query = "",
@@ -90,10 +67,6 @@ export function filterTasks({
     }
 
     if (assigneeId !== "all" && task.assignee !== assigneeId) {
-      return false;
-    }
-
-    if (approvalStatus !== "all" && task.approvalStatus !== approvalStatus) {
       return false;
     }
 

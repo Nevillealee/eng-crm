@@ -33,7 +33,7 @@ RUN --mount=type=bind,source=package.json,target=package.json \
     --mount=type=cache,target=/root/.yarn \
     yarn install --production --frozen-lockfile
 
-################################################################################
+    ################################################################################
 # Create a stage for building the application.
 FROM deps as build
 
@@ -72,6 +72,7 @@ COPY --from=build /usr/src/app/generated/prisma ./generated/prisma
 COPY --from=deps /usr/src/app/node_modules ./node_modules
 COPY --from=build /usr/src/app/.next ./.next
 
+COPY --chown=node:node . /usr/src/app
 
 # Expose the port that the application listens on.
 EXPOSE 3000

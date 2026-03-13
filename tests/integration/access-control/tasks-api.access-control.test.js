@@ -12,7 +12,6 @@ function buildTaskRecord(overrides = {}) {
     completedAt: null,
     completedById: null,
     completed: false,
-    approvalStatus: "pending",
     dueOn: new Date("2026-03-21T00:00:00.000Z"),
     notes: "Focus on the filter state.",
     resourceType: "task",
@@ -238,7 +237,7 @@ describe("Given task API access control", () => {
     );
   });
 
-  it("When an engineer tries to approve a task, then PATCH /api/tasks/[taskId] returns forbidden", async () => {
+  it("When legacy approvalStatus is sent to PATCH /api/tasks/[taskId], then it is rejected", async () => {
     jest.resetModules();
 
     jest.doMock("../../../auth", () => ({
@@ -264,10 +263,47 @@ describe("Given task API access control", () => {
     );
     const payload = await readJson(response);
 
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(400);
     expect(payload).toEqual({
       ok: false,
-      error: "Only admins can approve or reject tasks.",
+      error: "Field approvalStatus has been removed.",
+    });
+  });
+
+  it("When legacy approval_status is sent to POST /api/tasks, then it is rejected", async () => {
+    jest.resetModules();
+
+    jest.doMock("../../../auth", () => ({
+      auth: jest.fn().mockResolvedValue({
+        user: { id: "admin-1", role: "admin", email: "admin@example.com" },
+      }),
+    }));
+    jest.doMock("../../../lib/prisma", () => ({
+      __esModule: true,
+      default: {
+        project: { findUnique: jest.fn() },
+        user: { findUnique: jest.fn() },
+        task: { create: jest.fn() },
+      },
+    }));
+    jest.doMock("../../../lib/admin-audit", () => ({
+      recordAdminAudit: jest.fn(),
+    }));
+
+    const { POST } = await import("../../../app/api/tasks/route.js");
+    const response = await POST(
+      jsonRequest("http://localhost/api/tasks", "POST", {
+        projectId: "proj-1",
+        name: "Ship dashboard",
+        approval_status: "approved",
+      })
+    );
+    const payload = await readJson(response);
+
+    expect(response.status).toBe(400);
+    expect(payload).toEqual({
+      ok: false,
+      error: "Field approval_status has been removed.",
     });
   });
 });

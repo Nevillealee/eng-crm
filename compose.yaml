@@ -25,6 +25,16 @@ services:
       ADMIN_PW: ${ADMIN_PW}
     ports:
       - 3000:3000
+    develop:
+      watch:
+        - action: sync
+          path: ./app
+          target: /src/app
+          initial_sync: true
+          ignore:
+            - /src/node_modules/
+        - action: rebuild
+          path: package.json
 
   postgres:
     container_name: eng_crm_db

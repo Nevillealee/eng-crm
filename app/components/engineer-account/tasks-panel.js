@@ -14,9 +14,7 @@ import {
 } from "@mui/material";
 import {
   formatTaskDateLabel,
-  taskApprovalColor,
   taskCompletionColor,
-  taskApprovalFilterOptions,
   taskCompletionFilterOptions,
   taskDueFilterOptions,
   taskUserLabel,
@@ -57,7 +55,6 @@ export default function TasksPanel({
   filteredTasks,
   editingTaskId,
   taskProjectFilter,
-  taskApprovalFilter,
   taskCompletionFilter,
   taskDueFilter,
   taskSearch,
@@ -67,7 +64,6 @@ export default function TasksPanel({
   onDeleteTask,
   onToggleTaskCompleted,
   onTaskProjectFilterChange,
-  onTaskApprovalFilterChange,
   onTaskCompletionFilterChange,
   onTaskDueFilterChange,
   onTaskSearchChange,
@@ -79,7 +75,6 @@ export default function TasksPanel({
   const draftOpen = hasTaskDraft(taskForm, editingTaskId);
   const activeFilterCount = [
     taskProjectFilter !== "all",
-    taskApprovalFilter !== "all",
     taskCompletionFilter !== "all",
     taskDueFilter !== "all",
     taskSearch.trim() !== "",
@@ -187,13 +182,6 @@ export default function TasksPanel({
           </Stack>
           <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
             <FormSelectField
-              label="Approval"
-              value={taskApprovalFilter}
-              onChange={(event) => onTaskApprovalFilterChange(event.target.value)}
-              options={taskApprovalFilterOptions}
-              sx={{ minWidth: { md: 220 } }}
-            />
-            <FormSelectField
               label="Completion"
               value={taskCompletionFilter}
               onChange={(event) => onTaskCompletionFilterChange(event.target.value)}
@@ -231,12 +219,6 @@ export default function TasksPanel({
                       size="small"
                       color={taskCompletionColor(task.completed)}
                       label={task.completed ? "Completed" : "Open"}
-                    />
-                    <Chip
-                      size="small"
-                      color={taskApprovalColor(task.approvalStatus)}
-                      label={task.approvalStatus}
-                      sx={{ textTransform: "capitalize" }}
                     />
                   </Stack>
                 </Stack>

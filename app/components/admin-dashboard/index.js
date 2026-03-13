@@ -65,7 +65,6 @@ function emptyTaskForm(projectId = "", assigneeId = "") {
     notes: "",
     parentTaskId: "",
     completed: false,
-    approvalStatus: "pending",
   };
 }
 
@@ -101,7 +100,6 @@ export default function AdminDashboard({ session }) {
   const [taskForm, setTaskForm] = useState(emptyTaskForm("", session?.user?.id || ""));
   const [taskProjectFilter, setTaskProjectFilter] = useState("all");
   const [taskAssigneeFilter, setTaskAssigneeFilter] = useState("all");
-  const [taskApprovalFilter, setTaskApprovalFilter] = useState("all");
   const [taskCompletionFilter, setTaskCompletionFilter] = useState("all");
   const [taskDueFilter, setTaskDueFilter] = useState("all");
   const [taskSearch, setTaskSearch] = useState("");
@@ -295,14 +293,12 @@ export default function AdminDashboard({ session }) {
         tasks,
         projectId: taskProjectFilter,
         assigneeId: taskAssigneeFilter,
-        approvalStatus: taskApprovalFilter,
         completion: taskCompletionFilter,
         due: taskDueFilter,
         query: taskSearch,
       })
     );
   }, [
-    taskApprovalFilter,
     taskAssigneeFilter,
     taskCompletionFilter,
     taskDueFilter,
@@ -762,7 +758,6 @@ export default function AdminDashboard({ session }) {
       notes: task.notes || "",
       parentTaskId: task.parentTaskId || "",
       completed: Boolean(task.completed),
-      approvalStatus: task.approvalStatus || "pending",
     });
     setError("");
     setInfo(`Editing task: ${task.name || "Untitled"}`);
@@ -789,7 +784,6 @@ export default function AdminDashboard({ session }) {
           notes: taskForm.notes,
           parentTaskId: taskForm.parentTaskId || null,
           completed: taskForm.completed,
-          approvalStatus: taskForm.approvalStatus,
         }),
       });
       const payload = await response.json().catch(() => ({}));
@@ -993,7 +987,6 @@ export default function AdminDashboard({ session }) {
     setShowCreateTaskForm(false);
     setTaskProjectFilter(projectId || "all");
     setTaskAssigneeFilter(assigneeId || "all");
-    setTaskApprovalFilter("all");
     setTaskCompletionFilter("all");
     setTaskDueFilter("all");
     setTaskSearch("");
@@ -1187,7 +1180,6 @@ export default function AdminDashboard({ session }) {
                   editingTaskId={editingTaskId}
                   taskProjectFilter={taskProjectFilter}
                   taskAssigneeFilter={taskAssigneeFilter}
-                  taskApprovalFilter={taskApprovalFilter}
                   taskCompletionFilter={taskCompletionFilter}
                   taskDueFilter={taskDueFilter}
                   taskSearch={taskSearch}
@@ -1200,7 +1192,6 @@ export default function AdminDashboard({ session }) {
                   onToggleTaskCompleted={toggleTaskCompleted}
                   onTaskProjectFilterChange={setTaskProjectFilter}
                   onTaskAssigneeFilterChange={setTaskAssigneeFilter}
-                  onTaskApprovalFilterChange={setTaskApprovalFilter}
                   onTaskCompletionFilterChange={setTaskCompletionFilter}
                   onTaskDueFilterChange={setTaskDueFilter}
                   onTaskSearchChange={setTaskSearch}

@@ -48,7 +48,6 @@ export default function EngineerAccount() {
   const [editingTaskId, setEditingTaskId] = useState("");
   const [taskForm, setTaskForm] = useState(emptyTaskForm());
   const [taskProjectFilter, setTaskProjectFilter] = useState("all");
-  const [taskApprovalFilter, setTaskApprovalFilter] = useState("all");
   const [taskCompletionFilter, setTaskCompletionFilter] = useState("all");
   const [taskDueFilter, setTaskDueFilter] = useState("all");
   const [taskSearch, setTaskSearch] = useState("");
@@ -241,7 +240,6 @@ export default function EngineerAccount() {
     const nextProjectFilter = projectId || "all";
     setActivePanel("tasks");
     setTaskProjectFilter(nextProjectFilter);
-    setTaskApprovalFilter("all");
     setTaskCompletionFilter("all");
     setTaskDueFilter("all");
     setTaskSearch("");
@@ -442,7 +440,6 @@ export default function EngineerAccount() {
     filterTasks({
       tasks,
       projectId: taskProjectFilter,
-      approvalStatus: taskApprovalFilter,
       completion: taskCompletionFilter,
       due: taskDueFilter,
       query: taskSearch,
@@ -502,7 +499,6 @@ export default function EngineerAccount() {
                 filteredTasks={filteredTasks}
                 editingTaskId={editingTaskId}
                 taskProjectFilter={taskProjectFilter}
-                taskApprovalFilter={taskApprovalFilter}
                 taskCompletionFilter={taskCompletionFilter}
                 taskDueFilter={taskDueFilter}
                 taskSearch={taskSearch}
@@ -512,7 +508,6 @@ export default function EngineerAccount() {
                 onDeleteTask={deleteTask}
                 onToggleTaskCompleted={toggleTaskCompleted}
                 onTaskProjectFilterChange={setTaskProjectFilter}
-                onTaskApprovalFilterChange={setTaskApprovalFilter}
                 onTaskCompletionFilterChange={setTaskCompletionFilter}
                 onTaskDueFilterChange={setTaskDueFilter}
                 onTaskSearchChange={setTaskSearch}

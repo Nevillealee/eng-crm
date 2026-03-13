@@ -7,7 +7,6 @@ import {
   isProjectMember,
   parseDateInput,
   parseOptionalId,
-  parseTaskApprovalStatus,
   parseTaskCompletedValue,
   parseTaskName,
   parseTaskNotes,
@@ -48,13 +47,6 @@ function buildTaskChanges(previousTask, updatedTask) {
     changes.assigneeId = {
       before: previousTask.assigneeId,
       after: updatedTask.assigneeId,
-    };
-  }
-
-  if (previousTask.approvalStatus !== updatedTask.approvalStatus) {
-    changes.approvalStatus = {
-      before: previousTask.approvalStatus,
-      after: updatedTask.approvalStatus,
     };
   }
 
@@ -138,36 +130,11 @@ async function recordTaskUpdateAudits({ session, previousTask, updatedTask, chan
     });
   }
 
-  if (changes.approvalStatus?.after === "approved") {
-    entries.push({
-      actorUserId: session.user.id,
-      actorEmail: session.user.email,
-      action: "task.approved",
-      targetType: "task",
-      targetId: updatedTask.id,
-      summary: `Approved task ${updatedTask.name}.`,
-      metadata: sharedMetadata,
-    });
-  }
-
-  if (changes.approvalStatus?.after === "rejected") {
-    entries.push({
-      actorUserId: session.user.id,
-      actorEmail: session.user.email,
-      action: "task.rejected",
-      targetType: "task",
-      targetId: updatedTask.id,
-      summary: `Rejected task ${updatedTask.name}.`,
-      metadata: sharedMetadata,
-    });
-  }
-
   const hasGenericChanges = changedKeys.some((key) =>
     ["projectId", "name", "dueOn", "notes", "parentTaskId"].includes(key)
   );
-  const approvalResetToPending = changes.approvalStatus?.after === "pending";
 
-  if (hasGenericChanges || approvalResetToPending || entries.length === 0) {
+  if (hasGenericChanges || entries.length === 0) {
     entries.push({
       actorUserId: session.user.id,
       actorEmail: session.user.email,
@@ -289,9 +256,8 @@ export async function PATCH(request, { params }) {
       Object.prototype.hasOwnProperty.call(input, "assigneeId") ||
       Object.prototype.hasOwnProperty.call(input, "assignee");
     const hasCompleted = Object.prototype.hasOwnProperty.call(input, "completed");
-    const hasApprovalStatus =
-      Object.prototype.hasOwnProperty.call(input, "approvalStatus") ||
-      Object.prototype.hasOwnProperty.call(input, "approval_status");
+    const hasApprovalStatus = Object.prototype.hasOwnProperty.call(input, "approvalStatus");
+    const hasApprovalStatusLegacySnake = Object.prototype.hasOwnProperty.call(input, "approval_status");
     const hasDueOn = Object.prototype.hasOwnProperty.call(input, "dueOn");
     const hasNotes = Object.prototype.hasOwnProperty.call(input, "notes");
     const hasParentTaskId = Object.prototype.hasOwnProperty.call(input, "parentTaskId");
@@ -303,10 +269,17 @@ export async function PATCH(request, { params }) {
       );
     }
 
-    if (!isAdmin && hasApprovalStatus) {
+    if (hasApprovalStatus) {
       return NextResponse.json(
-        { ok: false, error: "Only admins can approve or reject tasks." },
-        { status: 403 }
+        { ok: false, error: "Field approvalStatus has been removed." },
+        { status: 400 }
+      );
+    }
+
+    if (hasApprovalStatusLegacySnake) {
+      return NextResponse.json(
+        { ok: false, error: "Field approval_status has been removed." },
+        { status: 400 }
       );
     }
 
@@ -333,13 +306,6 @@ export async function PATCH(request, { params }) {
     const parsedCompleted = hasCompleted ? parseTaskCompletedValue(input.completed) : null;
     if (hasCompleted && parsedCompleted === null) {
       return NextResponse.json({ ok: false, error: "Invalid completed flag." }, { status: 400 });
-    }
-
-    const parsedApprovalStatus = hasApprovalStatus
-      ? parseTaskApprovalStatus(input.approvalStatus ?? input.approval_status)
-      : null;
-    if (hasApprovalStatus && parsedApprovalStatus === null) {
-      return NextResponse.json({ ok: false, error: "Invalid approval status." }, { status: 400 });
     }
 
     const dueOnInput = hasDueOn ? input.dueOn : undefined;
@@ -456,10 +422,6 @@ export async function PATCH(request, { params }) {
 
     if (hasParentTaskId && (parsedParentTaskId || null) !== (existingTask.parentTaskId || null)) {
       updateData.parentTaskId = parsedParentTaskId;
-    }
-
-    if (isAdmin && hasApprovalStatus && parsedApprovalStatus !== existingTask.approvalStatus) {
-      updateData.approvalStatus = parsedApprovalStatus;
     }
 
     if (hasCompleted && parsedCompleted !== existingTask.completed) {

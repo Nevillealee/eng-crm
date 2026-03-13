@@ -580,7 +580,6 @@ describe("Given graceful API error handling", () => {
             completedAt: null,
             completedById: null,
             completed: false,
-            approvalStatus: "pending",
             dueOn: null,
             notes: "",
             resourceType: "task",

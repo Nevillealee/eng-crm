@@ -7,7 +7,6 @@ import CompactPanelSection from "../../compact-panel-section";
 import { FormSelectField, FormTextField } from "../../form-fields";
 import ResponsiveCreateSheet from "../../responsive-create-sheet";
 import {
-  taskApprovalFilterOptions,
   taskCompletionFilterOptions,
   taskDueFilterOptions,
 } from "../../tasks/shared";
@@ -25,7 +24,6 @@ export default function TasksPanel({
   editingTaskId,
   taskProjectFilter,
   taskAssigneeFilter,
-  taskApprovalFilter,
   taskCompletionFilter,
   taskDueFilter,
   taskSearch,
@@ -38,7 +36,6 @@ export default function TasksPanel({
   onToggleTaskCompleted,
   onTaskProjectFilterChange,
   onTaskAssigneeFilterChange,
-  onTaskApprovalFilterChange,
   onTaskCompletionFilterChange,
   onTaskDueFilterChange,
   onTaskSearchChange,
@@ -53,7 +50,6 @@ export default function TasksPanel({
   const activeFilterCount = [
     taskProjectFilter !== "all",
     taskAssigneeFilter !== "all",
-    taskApprovalFilter !== "all",
     taskCompletionFilter !== "all",
     taskDueFilter !== "all",
     taskSearch.trim() !== "",
@@ -99,7 +95,7 @@ export default function TasksPanel({
             ) : null}
           </Stack>
           <Typography color="text.secondary">
-            Manage project tasks, assignments, completion, and approvals.
+            Manage project tasks, assignments, and completion.
           </Typography>
           <ResponsiveCreateSheet open={showCreateTaskForm} onClose={onCloseCreateTaskForm}>
             {createTaskForm}
@@ -109,7 +105,7 @@ export default function TasksPanel({
 
       <CompactPanelSection
         title="Task filters"
-        summary={activeFilterCount ? `${activeFilterCount} active filter${activeFilterCount > 1 ? "s" : ""}` : "Search, assignee, status, and due date"}
+        summary={activeFilterCount ? `${activeFilterCount} active filter${activeFilterCount > 1 ? "s" : ""}` : "Search, assignee, completion, and due date"}
         defaultExpandedMobile={activeFilterCount > 0}
       >
         <Stack spacing={2}>
@@ -135,13 +131,6 @@ export default function TasksPanel({
             />
           </Stack>
           <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-            <FormSelectField
-              label="Approval"
-              value={taskApprovalFilter}
-              onChange={(event) => onTaskApprovalFilterChange(event.target.value)}
-              options={taskApprovalFilterOptions}
-              sx={{ minWidth: { md: 220 } }}
-            />
             <FormSelectField
               label="Completion"
               value={taskCompletionFilter}

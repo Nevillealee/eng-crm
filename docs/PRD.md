@@ -100,7 +100,7 @@ Fields (engineer-editable and admin-editable):
 
 - A `Tasks` section is available in the engineer side panel.
 - Engineers can create tasks only for projects they are assigned to.
-- Engineers can filter their visible tasks by project, completion state, approval status, due bucket, and task name.
+- Engineers can filter their visible tasks by project, completion state, due bucket, and task name.
 - Engineers can open the task view from the existing projects panel with the project filter preselected.
 - Every task is project-scoped and includes:
   - `id`
@@ -111,7 +111,6 @@ Fields (engineer-editable and admin-editable):
   - `completed_at`
   - `completed_by`
   - `completed`
-  - `approval_status` (`pending` | `approved` | `rejected`)
   - `due_on`
   - `notes`
   - `resource_type` (`task`)
@@ -145,14 +144,13 @@ Admin can create/manage tasks including:
 - Notes
 - Parent task (optional)
 - Completion state
-- Approval status
 
 Admin task workflows:
 - A dedicated `Tasks` view exists in the admin dashboard.
 - Admin can navigate to Tasks directly from dashboard navigation.
 - Admin can open Tasks from the Projects view or from an individual project card with the project filter pre-applied.
 - Admin can open Tasks from the Engineers view to see all tasks assigned to a selected engineer.
-- Admin task filtering supports project, assignee, approval status, completion state, due bucket, and task name search.
+- Admin task filtering supports project, assignee, completion state, due bucket, and task name search.
 
 ## 7) Data model (logical)
 
@@ -195,7 +193,6 @@ Admin task workflows:
 - `completedAt` (nullable)
 - `completedByUserId` (nullable)
 - `completed`: boolean
-- `approvalStatus`: `pending` | `approved` | `rejected`
 - `dueOn` (nullable)
 - `notes` (nullable)
 - `resourceType`: fixed `task`
@@ -237,6 +234,6 @@ Admin:
 - Engineer can update skills/city/avatar/availability and admin sees the updates.
 - Admin can create an ongoing project and assign engineers; engineers see assigned projects.
 - Engineers can create self-assigned tasks for projects they belong to and manage tasks they created or are assigned to.
-- Engineers cannot assign tasks to other users and cannot approve/reject tasks.
+- Engineers cannot assign tasks to other users.
 - Admin can manage all tasks, assign tasks to engineers, and open filtered task lists from Projects and Engineers views.
 - Admin notes are only visible to admins.

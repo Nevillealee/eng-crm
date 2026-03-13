@@ -1,6 +1,5 @@
 import { TASK_NAME_MAX_LENGTH, TASK_NOTES_MAX_LENGTH } from "../../constants/text-limits";
 
-export const allowedTaskApprovalStatuses = new Set(["pending", "approved", "rejected"]);
 export const allowedTaskDueFilters = new Set(["all", "overdue", "due_today", "upcoming", "no_due_date"]);
 
 export const taskUserSummarySelect = {
@@ -89,15 +88,6 @@ export function parseTaskNotes(value) {
   return parseOptionalString(value, TASK_NOTES_MAX_LENGTH);
 }
 
-export function parseTaskApprovalStatus(value) {
-  if (typeof value !== "string") {
-    return null;
-  }
-
-  const normalized = value.trim().toLowerCase();
-  return allowedTaskApprovalStatuses.has(normalized) ? normalized : null;
-}
-
 export function parseTaskCompletedValue(value) {
   if (typeof value === "boolean") {
     return value;
@@ -140,7 +130,6 @@ export function buildTaskListFilters(searchParams) {
     projectId: parseOptionalId(searchParams.get("projectId")),
     assigneeId: parseOptionalId(searchParams.get("assigneeId")),
     createdByUserId: parseOptionalId(searchParams.get("createdBy")),
-    approvalStatus: parseTaskApprovalStatus(searchParams.get("approvalStatus")),
     completed: parseTaskCompletedValue(searchParams.get("completed")),
     due: parseTaskDueFilter(searchParams.get("due")),
     query: parseOptionalString(searchParams.get("q"), TASK_NAME_MAX_LENGTH),
@@ -176,10 +165,6 @@ export function buildTaskWhere({ filters, isAdmin, userId, now = new Date() }) {
 
   if (filters.createdByUserId) {
     clauses.push({ createdByUserId: filters.createdByUserId });
-  }
-
-  if (filters.approvalStatus) {
-    clauses.push({ approvalStatus: filters.approvalStatus });
   }
 
   if (typeof filters.completed === "boolean") {
@@ -312,7 +297,6 @@ export function toTaskDto(task, { sessionUserId = "", isAdmin = false } = {}) {
     completedAt: task.completedAt,
     completedBy: task.completedById,
     completed: Boolean(task.completed),
-    approvalStatus: task.approvalStatus,
     dueOn: task.dueOn,
     notes: task.notes || "",
     resourceType: task.resourceType || "task",
